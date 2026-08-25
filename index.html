@@ -257,7 +257,21 @@ img,video{max-width:100%;display:block}
   .opts-row{flex-direction:column;align-items:stretch}
   .field select{min-width:0;width:100%}
 }
-</style>
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+      footer {
+      border-top: 1px solid var(--border);
+      padding: 20px;
+      text-align: center;
+      font-size: 0.72rem;
+      color: var(--text3);
+    }
+    footer p { margin-bottom: 4px; }
+    footer a { color: var(--text2); text-decoration: underline; text-underline-offset: 2px; }
+    footer a:hover { color: var(--accent); }
+  </style>
 </head>
 <body>
 
@@ -528,7 +542,8 @@ img,video{max-width:100%;display:block}
   <button type="button" class="btn btn-g" id="moreMob">⋯</button>
 </div>
 
-<footer class="site-footer">Publico no GitHub <a href="https://github.com/taldorafael/video-com-legenda-edicao-automatica/" target="_blank" rel="noopener">https://videocomlegenda.vercel.app/</a>.</p>
+<footer>
+  <p>Código aberto no <a href="https://github.com/taldorafael/video-com-legenda-edicao-automatica/" target="_blank" rel="noopener">GitHub</a> · <a href="https://videocomlegenda.vercel.app/" target="_blank" rel="noopener">videocomlegenda.vercel.app</a></p>
 </footer>
 
 <script type="module">
