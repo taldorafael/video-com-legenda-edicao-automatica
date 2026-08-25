@@ -1662,7 +1662,7 @@ function initPreview() {
 
   $('regroupBtn').addEventListener('click', ()=>{
     if(!state.rawWords.length){setStatus(sL,'Sem dados palavra-a-palavra.','err');return;}
-    const maxW=Math.max(1,+$('maxWords').value||3);
+    const maxW=Math.max(1,+$('maxWords').value||2);
     state.chunks=groupWords(state.rawWords,'',maxW,2.0);
     buildLines(); schedRender(); setStatus(sL,'Reagrupado!','ok'); saveLocal();
   });
