@@ -1459,6 +1459,35 @@ async function exportBurned() {
     else if (PERF === 'mid' && totalWords > 180) useWordLevel = false;
     else if (PERF === 'high' && totalWords > 450) useWordLevel = totalWords < 700;
 
+    // Quantos sub-frames de animação por palavra (tscaps renderiza continuamente)
+    const animName = state.anim || 'pop';
+    const animDur = animName==='bounce' ? 0.34 : (animName==='scale' ? 0.26 : (animName==='fade' ? 0.28 : 0.30));
+    let animSteps = PERF==='high' ? 8 : (PERF==='mid' ? 5 : 3);
+    if (!useWordLevel) animSteps = 1;
+
+    function animScale(p) {
+      // p 0→1 progress of entrance animation
+      const e = 1 - Math.pow(1 - Math.min(1, Math.max(0, p)), 3); // easeOutCubic
+      if (animName === 'pop' || animName === 'bounce') {
+        // overshoot then settle
+        if (p < 0.55) return 0.55 + 0.72 * (p / 0.55); // up to ~1.27
+        return 1.27 - 0.09 * ((p - 0.55) / 0.45); // settle to ~1.18
+      }
+      if (animName === 'scale') return 0.7 + 0.48 * e;
+      if (animName === 'fade') return 0.85 + 0.27 * e;
+      if (animName === 'slide') return 0.9 + 0.28 * e;
+      return 1.18;
+    }
+    function animAlpha(p) {
+      if (animName === 'fade') return Math.min(1, p * 1.4);
+      return 1;
+    }
+    function animDy(p, fSz) {
+      if (animName === 'slide') return (1 - Math.min(1, p * 1.2)) * fSz * 0.35;
+      if (animName === 'bounce' && p < 0.5) return (1 - p * 2) * fSz * 0.15;
+      return 0;
+    }
+
     const frames=[];
     for (const c of state.chunks) {
       if (!c||!(c.end>c.start)||!String(c.text||'').trim()) continue;
@@ -1468,10 +1497,25 @@ async function exportBurned() {
           const w=words[wi];
           const a=Math.max(c.start,w.s??c.start), b=Math.min(c.end,w.e??c.end);
           if(b-a<0.02) continue;
-          frames.push({start:a,end:b,words,active:wi});
+          const span = b - a;
+          const aDur = Math.min(animDur, Math.max(0.08, span * 0.55));
+          // Sub-frames only during animation window, then one hold frame
+          if (animSteps > 1 && aDur >= 0.08) {
+            for (let si=0; si<animSteps; si++) {
+              const t0 = a + (aDur * si) / animSteps;
+              const t1 = a + (aDur * (si + 1)) / animSteps;
+              const p = (si + 0.5) / animSteps;
+              frames.push({start:t0, end:t1, words, active:wi, ap:p});
+            }
+            if (a + aDur < b - 0.02) {
+              frames.push({start:a + aDur, end:b, words, active:wi, ap:1});
+            }
+          } else {
+            frames.push({start:a, end:b, words, active:wi, ap:1});
+          }
         }
       } else {
-        frames.push({start:c.start,end:c.end,words,active:-1});
+        frames.push({start:c.start, end:c.end, words, active:-1, ap:1});
       }
     }
     if (!frames.length) throw new Error('Sem frames válidos.');
@@ -1480,21 +1524,22 @@ async function exportBurned() {
     for (let fi=0;fi<frames.length;fi++){
       if (state.cancelReq) return finish(false,'Cancelado.');
       const fr=frames[fi];
+      const ap = fr.ap ?? 1;
       const cv=document.createElement('canvas');
       cv.width=outW; cv.height=outH;
       const ctx=cv.getContext('2d',{alpha:true});
       ctx.clearRect(0,0,outW,outH);
       ctx.textBaseline='middle'; ctx.textAlign='left';
 
-      // Same 78% width rule as preview
       const space=sz*.26, maxLine=outW * 0.78;
+      const scOn = animScale(ap);
+      // Layout uses settled size so words don't reflow mid-animation
       const toks=fr.words.map((w,idx)=>({ txt:up?String(w.t).toUpperCase():String(w.t), on:fr.active===idx }));
       const lines=[]; let cur=[],curW=0;
       for (const tk of toks){
         const fam=tk.on?hFam:mFam, fw=tk.on?(state.curHlWeight||'900'):(state.curWeight||'900');
-        // Active word is larger (simulates Pop animation)
-        const fSz = tk.on ? sz * 1.18 : sz;
-        ctx.font=`${(state.italicOn||s.italic||(tk.on&&s.italicHl))?'italic ':''}${fw} ${fSz}px ${fam}`;
+        const layoutSz = tk.on ? sz * 1.18 : sz;
+        ctx.font=`${(state.italicOn||s.italic||(tk.on&&s.italicHl))?'italic ':''}${fw} ${layoutSz}px ${fam}`;
         const tw=ctx.measureText(tk.txt).width+space;
         if(curW+tw>maxLine&&cur.length){lines.push({toks:cur,w:curW});cur=[];curW=0;}
         cur.push(tk); curW+=tw;
@@ -1503,7 +1548,8 @@ async function exportBurned() {
       const lh=sz*1.22;
       let y=outH*(pos/100)-((lines.length-1)*lh)/2;
 
-      if(s.bg&&!hlBg){
+      const useFullBg = !!(s.bg && (s.fullBg || !hlBg));
+      if(useFullBg){
         let mxW=0; for(const ln of lines) if(ln.w>mxW) mxW=ln.w;
         const padX=space*1.5, padY=space*.7;
         const bx=(outW-mxW)/2-padX, by=y-(lines.length*lh)/2+lh/2-padY;
@@ -1519,24 +1565,34 @@ async function exportBurned() {
         for(const tk of ln.toks){
           const isOn=tk.on;
           const fam=isOn?hFam:mFam, fw=isOn?(state.curHlWeight||'900'):(state.curWeight||'900');
-          const fSz=isOn?sz*1.18:sz; // stronger highlight = closer to Pop
+          const fSz = isOn ? sz * scOn : sz;
+          const dy = isOn ? animDy(ap, sz) : 0;
+          const alpha = isOn ? animAlpha(ap) : 1;
+          ctx.globalAlpha = alpha;
           ctx.font=`${(state.italicOn||s.italic||(isOn&&s.italicHl))?'italic ':''}${fw} ${fSz}px ${fam}`;
           const tw=ctx.measureText(tk.txt).width;
+          // Keep layout spacing based on settled size
+          const layoutSz = isOn ? sz * 1.18 : sz;
+          ctx.font=`${(state.italicOn||s.italic||(isOn&&s.italicHl))?'italic ':''}${fw} ${layoutSz}px ${fam}`;
+          const layoutTw=ctx.measureText(tk.txt).width;
+          ctx.font=`${(state.italicOn||s.italic||(isOn&&s.italicHl))?'italic ':''}${fw} ${fSz}px ${fam}`;
           const fillCol=isOn?hl:color;
+          const drawX = x + (layoutTw - tw) / 2;
+          const drawY = y + dy;
           if(hlBg&&isOn){
             const padX=fSz*.14, padY=fSz*.11;
             ctx.fillStyle=hexRgba(bgCol||hl,Math.max(.75,bgOp));
             ctx.beginPath();
-            if(typeof ctx.roundRect==='function') ctx.roundRect(x-padX,y-fSz*.55-padY,tw+padX*2,fSz*1.1+padY*2,bgRad);
-            else ctx.rect(x-padX,y-fSz*.55-padY,tw+padX*2,fSz*1.1+padY*2);
+            if(typeof ctx.roundRect==='function') ctx.roundRect(drawX-padX,drawY-fSz*.55-padY,tw+padX*2,fSz*1.1+padY*2,bgRad);
+            else ctx.rect(drawX-padX,drawY-fSz*.55-padY,tw+padX*2,fSz*1.1+padY*2);
             ctx.fill();
           }
           if(s.glow){
             const gc=s.glowColor||hl;
-            for(const [blur,alpha] of [[fSz*1.3,.28],[fSz*.9,.48],[fSz*.5,.68],[fSz*.25,.88]]){
-              ctx.shadowColor=gc; ctx.shadowBlur=blur; ctx.globalAlpha=alpha; ctx.fillStyle=gc; ctx.fillText(tk.txt,x,y);
+            for(const [blur,al] of [[fSz*1.3,.28],[fSz*.9,.48],[fSz*.5,.68],[fSz*.25,.88]]){
+              ctx.shadowColor=gc; ctx.shadowBlur=blur; ctx.globalAlpha=al*alpha; ctx.fillStyle=gc; ctx.fillText(tk.txt,drawX,drawY);
             }
-            ctx.globalAlpha=1; ctx.shadowBlur=0; ctx.shadowColor='transparent';
+            ctx.globalAlpha=alpha; ctx.shadowBlur=0; ctx.shadowColor='transparent';
           } else if(shAmt>0){
             ctx.shadowColor=hexRgba(shCol,Math.min(1,shAmt/70));
             ctx.shadowBlur=Math.max(4,fSz*.18*(shAmt/50));
@@ -1544,11 +1600,12 @@ async function exportBurned() {
           } else { ctx.shadowBlur=0; ctx.shadowColor='transparent'; ctx.shadowOffsetY=0; }
           if(sw>0&&scol!=='transparent'){
             ctx.lineWidth=sw*(isOn?1.08:1); ctx.strokeStyle=scol; ctx.lineJoin='round';
-            ctx.strokeText(tk.txt,x,y);
+            ctx.strokeText(tk.txt,drawX,drawY);
           }
           ctx.shadowColor='transparent'; ctx.shadowBlur=0; ctx.shadowOffsetY=0;
-          ctx.fillStyle=fillCol; ctx.fillText(tk.txt,x,y);
-          x+=tw+space;
+          ctx.fillStyle=fillCol; ctx.fillText(tk.txt,drawX,drawY);
+          ctx.globalAlpha = 1;
+          x+=layoutTw+space;
         }
         y+=lh;
       }
