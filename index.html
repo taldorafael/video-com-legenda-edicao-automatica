@@ -1433,10 +1433,13 @@ async function exportBurned() {
 
     const vw = vid.videoWidth||1080, vh = vid.videoHeight||1920;
     let scale = 1;
-    if (PERF === 'low') scale = 0.75;
-    else if (PERF === 'mid' && (vw>1280||vh>1280)) scale = 0.85;
-    const outW = Math.round(vw * scale);
-    const outH = Math.round(vh * scale);
+    if (PERF === 'low') scale = 0.7;
+    else if (PERF === 'mid' && (vw>1280||vh>1280)) scale = 0.8;
+    // yuv420p exige dimensões pares
+    let outW = Math.round(vw * scale);
+    let outH = Math.round(vh * scale);
+    outW -= outW % 2; outH -= outH % 2;
+    if (outW < 2) outW = 2; if (outH < 2) outH = 2;
 
     const sz = Math.max(20, Math.min(90, Math.round(+$('size').value*(outH/1080))));
     const pos = +$('pos').value;
@@ -1446,32 +1449,35 @@ async function exportBurned() {
     const scol = $('strokeCol').value||'#000';
     const shAmt = +$('shadowAmt').value, shCol=$('shadowCol').value||'#000';
     const hlBg = isHlBgOn();
-    const bgCol = hlBg?($('bgCol').value||'#000'):'';
-    const bgOp = hlBg?(+$('bgOp').value||85)/100:0;
+    const s = STYLES[state.activeStyle]?.css || {};
+    const bgCol = (hlBg || s.fullBg) ? ($('bgCol').value || s.bg || '#000') : '';
+    const bgOp = hlBg ? ((+$('bgOp').value||85)/100) : (s.fullBg ? 0.92 : 0);
     const bgRad = +$('bgRad').value||8;
     const mFam = getFont(false), hFam=getFont(true);
-    const s = STYLES[state.activeStyle].css;
     const doReal = state.realcar;
 
     const totalWords = state.chunks.reduce((a,c)=>(c.words?.length||1)+a,0);
     let useWordLevel = doReal;
     if (PERF === 'low') useWordLevel = false;
-    else if (PERF === 'mid' && totalWords > 180) useWordLevel = false;
-    else if (PERF === 'high' && totalWords > 450) useWordLevel = totalWords < 700;
+    else if (PERF === 'mid' && totalWords > 120) useWordLevel = false;
+    else if (PERF === 'high' && totalWords > 280) useWordLevel = totalWords < 400;
 
-    // Quantos sub-frames de animação por palavra (tscaps renderiza continuamente)
     const animName = state.anim || 'pop';
     const animDur = animName==='bounce' ? 0.34 : (animName==='scale' ? 0.26 : (animName==='fade' ? 0.28 : 0.30));
-    let animSteps = PERF==='high' ? 8 : (PERF==='mid' ? 5 : 3);
-    if (!useWordLevel) animSteps = 1;
+    // Poucos sub-frames: FFmpeg.wasm quebra com dezenas de inputs
+    let animSteps = 1;
+    if (useWordLevel) {
+      if (PERF === 'high' && totalWords <= 80) animSteps = 4;
+      else if (PERF === 'high') animSteps = 2;
+      else if (PERF === 'mid' && totalWords <= 60) animSteps = 2;
+    }
+    const MAX_FRAMES = PERF === 'high' ? 100 : (PERF === 'mid' ? 60 : 40);
 
     function animScale(p) {
-      // p 0→1 progress of entrance animation
-      const e = 1 - Math.pow(1 - Math.min(1, Math.max(0, p)), 3); // easeOutCubic
+      const e = 1 - Math.pow(1 - Math.min(1, Math.max(0, p)), 3);
       if (animName === 'pop' || animName === 'bounce') {
-        // overshoot then settle
-        if (p < 0.55) return 0.55 + 0.72 * (p / 0.55); // up to ~1.27
-        return 1.27 - 0.09 * ((p - 0.55) / 0.45); // settle to ~1.18
+        if (p < 0.55) return 0.55 + 0.72 * (p / 0.55);
+        return 1.27 - 0.09 * ((p - 0.55) / 0.45);
       }
       if (animName === 'scale') return 0.7 + 0.48 * e;
       if (animName === 'fade') return 0.85 + 0.27 * e;
@@ -1488,7 +1494,7 @@ async function exportBurned() {
       return 0;
     }
 
-    const frames=[];
+    let frames=[];
     for (const c of state.chunks) {
       if (!c||!(c.end>c.start)||!String(c.text||'').trim()) continue;
       const words = c.words?.length ? c.words : (wordsFromChunk(c)||[{t:c.text,s:c.start,e:c.end}]);
@@ -1499,7 +1505,6 @@ async function exportBurned() {
           if(b-a<0.02) continue;
           const span = b - a;
           const aDur = Math.min(animDur, Math.max(0.08, span * 0.55));
-          // Sub-frames only during animation window, then one hold frame
           if (animSteps > 1 && aDur >= 0.08) {
             for (let si=0; si<animSteps; si++) {
               const t0 = a + (aDur * si) / animSteps;
@@ -1520,7 +1525,28 @@ async function exportBurned() {
     }
     if (!frames.length) throw new Error('Sem frames válidos.');
 
-    const pngNames=[];
+    // Limita total de overlays (evita Saída vazia no ffmpeg.wasm)
+    if (frames.length > MAX_FRAMES) {
+      setStatus(sL, `Muitos frames (${frames.length}). Simplificando…`);
+      const simplified=[];
+      for (const c of state.chunks) {
+        if (!c||!(c.end>c.start)||!String(c.text||'').trim()) continue;
+        const words = c.words?.length ? c.words : (wordsFromChunk(c)||[{t:c.text,s:c.start,e:c.end}]);
+        if (useWordLevel && words.length>1 && simplified.length + words.length <= MAX_FRAMES) {
+          for (let wi=0;wi<words.length;wi++){
+            const w=words[wi];
+            const a=Math.max(c.start,w.s??c.start), b=Math.min(c.end,w.e??c.end);
+            if(b-a<0.02) continue;
+            simplified.push({start:a, end:b, words, active:wi, ap:1});
+          }
+        } else {
+          simplified.push({start:c.start, end:c.end, words, active:-1, ap:1});
+        }
+      }
+      frames = simplified.slice(0, MAX_FRAMES);
+    }
+
+    const timedPngs=[]; // {name,start,end}
     for (let fi=0;fi<frames.length;fi++){
       if (state.cancelReq) return finish(false,'Cancelado.');
       const fr=frames[fi];
@@ -1533,7 +1559,6 @@ async function exportBurned() {
 
       const space=sz*.26, maxLine=outW * 0.78;
       const scOn = animScale(ap);
-      // Layout uses settled size so words don't reflow mid-animation
       const toks=fr.words.map((w,idx)=>({ txt:up?String(w.t).toUpperCase():String(w.t), on:fr.active===idx }));
       const lines=[]; let cur=[],curW=0;
       for (const tk of toks){
@@ -1569,19 +1594,17 @@ async function exportBurned() {
           const dy = isOn ? animDy(ap, sz) : 0;
           const alpha = isOn ? animAlpha(ap) : 1;
           ctx.globalAlpha = alpha;
-          ctx.font=`${(state.italicOn||s.italic||(isOn&&s.italicHl))?'italic ':''}${fw} ${fSz}px ${fam}`;
-          const tw=ctx.measureText(tk.txt).width;
-          // Keep layout spacing based on settled size
           const layoutSz = isOn ? sz * 1.18 : sz;
           ctx.font=`${(state.italicOn||s.italic||(isOn&&s.italicHl))?'italic ':''}${fw} ${layoutSz}px ${fam}`;
           const layoutTw=ctx.measureText(tk.txt).width;
           ctx.font=`${(state.italicOn||s.italic||(isOn&&s.italicHl))?'italic ':''}${fw} ${fSz}px ${fam}`;
+          const tw=ctx.measureText(tk.txt).width;
           const fillCol=isOn?hl:color;
           const drawX = x + (layoutTw - tw) / 2;
           const drawY = y + dy;
           if(hlBg&&isOn){
             const padX=fSz*.14, padY=fSz*.11;
-            ctx.fillStyle=hexRgba(bgCol||hl,Math.max(.75,bgOp));
+            ctx.fillStyle=hexRgba(bgCol||hl,Math.max(.75,bgOp||0.85));
             ctx.beginPath();
             if(typeof ctx.roundRect==='function') ctx.roundRect(drawX-padX,drawY-fSz*.55-padY,tw+padX*2,fSz*1.1+padY*2,bgRad);
             else ctx.rect(drawX-padX,drawY-fSz*.55-padY,tw+padX*2,fSz*1.1+padY*2);
@@ -1612,48 +1635,153 @@ async function exportBurned() {
       const blob=await new Promise(r=>cv.toBlob(r,'image/png'));
       if(!blob) continue;
       const buf=new Uint8Array(await blob.arrayBuffer());
-      const nm=`cap${fi}.png`;
+      const nm=`cap${timedPngs.length}.png`;
       ff.FS('writeFile',nm,buf);
-      pngNames.push(nm);
+      timedPngs.push({name:nm, start:fr.start, end:fr.end});
       if(fi%4===0){ setProg(pf,5+(fi/frames.length)*45); setStatus(sL,`Frame ${fi+1}/${frames.length}…`); }
     }
-    if(!pngNames.length) throw new Error('Nenhum frame gerado.');
+    if(!timedPngs.length) throw new Error('Nenhum frame gerado.');
 
     const ext=(state.srcFile.name.match(/\.[a-z0-9]+$/i)||['.mp4'])[0];
     const inN='input'+ext, outN='out.mp4';
     ff.FS('writeFile',inN,await state.ffFetch(state.srcFile));
-    setProg(pf,55); setStatus(sL,'Compositando legendas…');
+    setProg(pf,55); setStatus(sL,`Compositando ${timedPngs.length} overlays…`);
     if(state.cancelReq) return finish(false,'Cancelado.');
 
     let filter='', last='[0:v]';
-    for(let i=0;i<pngNames.length;i++){
-      const a=Math.max(0,+frames[i].start).toFixed(3);
-      const b=Math.max(+a+.03,+frames[i].end).toFixed(3);
-      const out=(i===pngNames.length-1)?'[vout]':`[v${i}]`;
+    for(let i=0;i<timedPngs.length;i++){
+      const a=Math.max(0,+timedPngs[i].start).toFixed(3);
+      const b=Math.max(+a+.04,+timedPngs[i].end).toFixed(3);
+      const out=(i===timedPngs.length-1)?'[vout]':`[v${i}]`;
       filter+=`${last}[${i+1}:v]overlay=0:0:enable='between(t,${a},${b})'${out};`;
       last=out;
     }
     filter=filter.replace(/;$/,'');
 
     const dur=(Number.isFinite(vid.duration)&&vid.duration>0)?vid.duration:3600;
-    const preset = PERF==='low' ? 'veryfast' : (PERF==='mid' ? 'faster' : 'ultrafast');
-    const crf = PERF==='low' ? 26 : 23;
+    const preset = PERF==='low' ? 'ultrafast' : (PERF==='mid' ? 'ultrafast' : 'veryfast');
+    const crf = PERF==='low' ? 28 : 23;
+
+    const logs=[];
+    const onLog = ({type, message}) => { if (message) logs.push(String(message)); };
+    try { ff.setLogger(onLog); } catch(_){}
 
     const cmd=['-y','-i',inN];
-    for(const n of pngNames) cmd.push('-i',n);
-    cmd.push('-t',String(dur),'-filter_complex',filter,'-map','[vout]','-map','0:a?',
-      '-c:v','libx264','-preset',preset,'-crf',String(crf),'-pix_fmt','yuv420p',
-      '-c:a','aac','-b:a','128k','-movflags','+faststart',outN);
+    for(const p of timedPngs) cmd.push('-i', p.name);
+    cmd.push(
+      '-t', String(dur),
+      '-filter_complex', filter,
+      '-map', '[vout]',
+      '-map', '0:a?',
+      '-c:v', 'libx264',
+      '-preset', preset,
+      '-crf', String(crf),
+      '-pix_fmt', 'yuv420p',
+      '-c:a', 'aac',
+      '-b:a', '128k',
+      '-movflags', '+faststart',
+      '-shortest',
+      outN
+    );
 
-    await ff.run(...cmd);
+    try {
+      await ff.run(...cmd);
+    } catch (runErr) {
+      console.error('ffmpeg run', runErr, logs.slice(-30));
+      // Retry simplificado: 1 overlay por chunk, sem animação
+      setStatus(sL,'Retry simplificado…');
+      for (const p of timedPngs) { try { ff.FS('unlink', p.name); } catch(_){} }
+      timedPngs.length = 0;
+      const simple=[];
+      for (const c of state.chunks) {
+        if (!c||!(c.end>c.start)||!String(c.text||'').trim()) continue;
+        const words = c.words?.length ? c.words : (wordsFromChunk(c)||[{t:c.text,s:c.start,e:c.end}]);
+        simple.push({start:c.start, end:c.end, words, active:-1, ap:1});
+        if (simple.length >= 40) break;
+      }
+      for (let fi=0;fi<simple.length;fi++){
+        const fr=simple[fi];
+        const cv=document.createElement('canvas');
+        cv.width=outW; cv.height=outH;
+        const ctx=cv.getContext('2d',{alpha:true});
+        ctx.clearRect(0,0,outW,outH);
+        ctx.textBaseline='middle'; ctx.textAlign='left';
+        const space=sz*.26, maxLine=outW*0.78;
+        const toks=fr.words.map(w=>({txt:up?String(w.t).toUpperCase():String(w.t), on:false}));
+        const lines=[]; let cur=[],curW=0;
+        for (const tk of toks){
+          ctx.font=`${(state.italicOn||s.italic)?'italic ':''}${state.curWeight||'900'} ${sz}px ${mFam}`;
+          const tw=ctx.measureText(tk.txt).width+space;
+          if(curW+tw>maxLine&&cur.length){lines.push({toks:cur,w:curW});cur=[];curW=0;}
+          cur.push(tk); curW+=tw;
+        }
+        if(cur.length) lines.push({toks:cur,w:curW});
+        const lh=sz*1.22;
+        let y=outH*(pos/100)-((lines.length-1)*lh)/2;
+        if(s.bg){
+          let mxW=0; for(const ln of lines) if(ln.w>mxW) mxW=ln.w;
+          const padX=space*1.5, padY=space*.7;
+          const bx=(outW-mxW)/2-padX, by=y-(lines.length*lh)/2+lh/2-padY;
+          ctx.fillStyle=s.bg;
+          ctx.beginPath();
+          if(typeof ctx.roundRect==='function') ctx.roundRect(bx,by,mxW+padX*2,lines.length*lh+padY*2,6);
+          else ctx.rect(bx,by,mxW+padX*2,lines.length*lh+padY*2);
+          ctx.fill();
+        }
+        for(const ln of lines){
+          let x=(outW-ln.w+space)/2;
+          for(const tk of ln.toks){
+            ctx.font=`${(state.italicOn||s.italic)?'italic ':''}${state.curWeight||'900'} ${sz}px ${mFam}`;
+            const tw=ctx.measureText(tk.txt).width;
+            if(shAmt>0){
+              ctx.shadowColor=hexRgba(shCol,Math.min(1,shAmt/70));
+              ctx.shadowBlur=Math.max(4,sz*.18*(shAmt/50));
+              ctx.shadowOffsetY=Math.max(2,sz*.06);
+            }
+            if(sw>0){ ctx.lineWidth=sw; ctx.strokeStyle=scol; ctx.lineJoin='round'; ctx.strokeText(tk.txt,x,y); }
+            ctx.shadowColor='transparent'; ctx.shadowBlur=0;
+            ctx.fillStyle=color; ctx.fillText(tk.txt,x,y);
+            x+=tw+space;
+          }
+          y+=lh;
+        }
+        const blob=await new Promise(r=>cv.toBlob(r,'image/png'));
+        if(!blob) continue;
+        const buf=new Uint8Array(await blob.arrayBuffer());
+        const nm=`caps${fi}.png`;
+        ff.FS('writeFile',nm,buf);
+        timedPngs.push({name:nm, start:fr.start, end:fr.end});
+      }
+      filter=''; last='[0:v]';
+      for(let i=0;i<timedPngs.length;i++){
+        const a=Math.max(0,+timedPngs[i].start).toFixed(3);
+        const b=Math.max(+a+.04,+timedPngs[i].end).toFixed(3);
+        const out=(i===timedPngs.length-1)?'[vout]':`[vs${i}]`;
+        filter+=`${last}[${i+1}:v]overlay=0:0:enable='between(t,${a},${b})'${out};`;
+        last=out;
+      }
+      filter=filter.replace(/;$/,'');
+      const cmd2=['-y','-i',inN];
+      for(const p of timedPngs) cmd2.push('-i', p.name);
+      cmd2.push('-t',String(dur),'-filter_complex',filter,'-map','[vout]','-map','0:a?',
+        '-c:v','libx264','-preset','ultrafast','-crf','28','-pix_fmt','yuv420p',
+        '-c:a','aac','-b:a','128k','-movflags','+faststart','-shortest',outN);
+      await ff.run(...cmd2);
+    }
 
     let outData;
     try { outData=ff.FS('readFile',outN); }
-    catch(e){ throw new Error('Saída não encontrada. Tente vídeo menor.'); }
-    if(!outData||outData.length<1000) throw new Error('Saída vazia.');
+    catch(e){
+      console.error('readFile', e, logs.slice(-40));
+      throw new Error('Saída não encontrada. Tente vídeo menor ou menos palavras/slide.');
+    }
+    if(!outData||outData.length<1000){
+      console.error('empty out', outData&&outData.length, logs.slice(-40));
+      throw new Error('Saída vazia. Tente: vídeo mais curto, desligar Realçar, ou PC com mais memória.');
+    }
 
     const outBlob=new Blob([outData.buffer],{type:'video/mp4'});
-    for(const n of pngNames){try{ff.FS('unlink',n);}catch(_){}}
+    for(const p of timedPngs){try{ff.FS('unlink',p.name);}catch(_){}}
     try{ff.FS('unlink',inN);}catch(_){}
     try{ff.FS('unlink',outN);}catch(_){}
 
