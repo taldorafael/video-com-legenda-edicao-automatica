@@ -1,81 +1,104 @@
-# IALegenda — Editor de Legendas
+# Editor Automático de IA que Adiciona Legendas em Vídeos
 
-Editor de legendas para vídeos que funciona diretamente no navegador, com transcrição de áudio por IA, estilos de legendas, destaque palavra por palavra e exportação do vídeo com as legendas incorporadas.
+Editor automático de IA para adicionar legendas em vídeos diretamente pelo navegador, com transcrição de áudio utilizando Whisper, personalização visual das legendas, edição dos textos e tempos, pré-visualização em tempo real e exportação do vídeo com as legendas incorporadas.
 
-O IALegenda foi desenvolvido para funcionar de forma **local no navegador**, sem necessidade de login ou envio do vídeo para um servidor. A transcrição utiliza modelos Whisper através do Transformers.js, enquanto a renderização final do vídeo utiliza FFmpeg.wasm.
+O projeto foi desenvolvido para realizar o processamento localmente no navegador, utilizando **Transformers.js**, **Whisper** e **FFmpeg.wasm**.
 
 ## ✨ Recursos
 
 * 🎬 Upload de vídeos e arquivos de áudio
-* 📁 Suporte a MP4, MOV, WebM, MP3 e WAV
-* 🧠 Transcrição automática com Whisper
-* ⚡ Suporte a WebGPU quando disponível
-* 💻 Fallback automático para CPU caso WebGPU não esteja disponível
-* 🌎 Seleção de idioma
-* 🔤 Português (BR), Inglês, Espanhol, Francês, Alemão, Japonês e Coreano
+* 📁 Suporte para MP4, MOV, WebM, MP3 e WAV
+* 🤖 Transcrição automática utilizando IA
+* 🧠 Whisper para reconhecimento de fala
+* ⚡ Utilização de WebGPU quando disponível
+* 💻 Fallback automático para CPU
+* 🌎 Seleção de idioma da transcrição
+* 🇧🇷 Português (Brasil)
+* 🇺🇸 Inglês
+* 🇪🇸 Espanhol
+* 🇫🇷 Francês
+* 🇩🇪 Alemão
+* 🇯🇵 Japonês
+* 🇰🇷 Coreano
 * 🔍 Detecção automática de idioma
 * 🌐 Tradução da transcrição para inglês
-* 📝 Importação de arquivos `.SRT` e `.VTT`
+* 📝 Importação de legendas SRT
+* 📝 Importação de legendas VTT
 * 🎨 Diversos estilos de legendas
-* ✏️ Editor visual de estilos
+* ✏️ Personalização completa dos estilos
 * 🔤 Diferentes fontes
 * 💪 Controle de peso da fonte
-* 📐 Controle de tamanho e posição
+* 📐 Controle de tamanho
+* 📍 Controle de posição
 * 🎨 Cores personalizáveis
 * 🌈 Destaque de palavras
-* 💥 Animação de destaque palavra por palavra
+* ✨ Animações de destaque
 * 🖍️ Fundo para palavras destacadas
-* 🌑 Sombra
-* 🖌️ Contorno
-* ✨ Efeitos de glow em estilos compatíveis
+* 🌑 Sombras
+* 🖌️ Contorno das letras
+* ✨ Efeitos visuais
 * 🔠 Texto em maiúsculas
 * 📱 Área segura para visualização
 * 📐 Proporções Original, 9:16, 4:5 e 1:1
-* ▶️ Controle de reprodução
-* ⏩ Velocidade de reprodução de 0.5× até 2×
+* ▶️ Pré-visualização do vídeo
+* ⏩ Controle de velocidade
 * ✂️ Divisão de legendas
-* ➕ Adição de novas linhas
-* 🗑️ Exclusão de linhas
-* ⏱️ Edição dos tempos das legendas
-* ✏️ Edição individual do texto
-* 🔄 Reagrupamento automático das legendas
-* 💾 Salvamento de projetos em JSON
-* 📂 Abertura de projetos salvos
-* 📄 Exportação `.SRT`
-* 📄 Exportação `.VTT`
-* 📄 Exportação `.TXT`
+* ➕ Adição de legendas
+* 🗑️ Exclusão de legendas
+* ⏱️ Edição dos tempos
+* ✏️ Edição dos textos
+* 🔄 Reagrupamento das legendas
+* 💾 Salvamento de projetos
+* 📂 Abertura de projetos
+* 📄 Exportação SRT
+* 📄 Exportação VTT
+* 📄 Exportação TXT
 * 🎥 Exportação do vídeo com legendas incorporadas
 
-A interface também possui uma versão adaptada para dispositivos móveis, incluindo uma barra de ações inferior.
+## 🤖 Transcrição automática com IA
 
-## 🤖 Transcrição com IA
+A transcrição é realizada diretamente no navegador utilizando **Whisper através do Transformers.js**.
 
-A transcrição é executada diretamente no navegador usando:
+O projeto possui diferentes opções de modelo:
 
-* `@huggingface/transformers`
-* Whisper Tiny
-* Whisper Base
-* Whisper Small
+| Modelo        | Descrição                              |
+| ------------- | -------------------------------------- |
+| Whisper Tiny  | Modelo menor e mais rápido             |
+| Whisper Base  | Equilíbrio entre velocidade e precisão |
+| Whisper Small | Maior precisão, porém mais pesado      |
 
-Modelos disponíveis:
+O processamento utiliza timestamps das palavras para permitir sincronização e destaque individual durante a reprodução do vídeo.
 
-| Modelo        | Característica                          |
-| ------------- | --------------------------------------- |
-| Whisper Tiny  | Mais rápido e aproximadamente 40 MB     |
-| Whisper Base  | Equilibrado e aproximadamente 80 MB     |
-| Whisper Small | Maior precisão e aproximadamente 250 MB |
+## ⚡ WebGPU
 
-O projeto utiliza timestamps por palavra para permitir o destaque sincronizado durante a reprodução.
+Quando disponível, o sistema pode utilizar **WebGPU** para acelerar o processamento da IA.
 
-Durante o processamento, o editor apresenta etapas como:
+Caso o navegador ou dispositivo não tenha suporte adequado, o sistema utiliza processamento por CPU.
 
-1. Transcrevendo áudio
-2. Detectando palavras-chave
-3. Montando legendas
+Isso permite que o editor continue funcionando em diferentes computadores e navegadores.
+
+## 🌎 Idiomas
+
+O editor permite selecionar o idioma utilizado na transcrição.
+
+Idiomas disponíveis:
+
+* Português
+* Inglês
+* Espanhol
+* Francês
+* Alemão
+* Japonês
+* Coreano
+* Automático
+
+Também existe a opção de tradução da transcrição para inglês.
 
 ## 🎨 Estilos de Legendas
 
-O editor possui uma biblioteca de estilos prontos, incluindo estilos como:
+O editor possui diversos estilos pré-configurados para facilitar a criação de legendas.
+
+Entre os estilos disponíveis estão:
 
 * HORMOZI 1
 * HORMOZI 2
@@ -108,106 +131,119 @@ O editor possui uma biblioteca de estilos prontos, incluindo estilos como:
 * Retro
 * Punch
 
-Os estilos podem ser filtrados entre **Todos**, **Padrão** e **Custom**.
+Os estilos podem ser organizados por categorias e também podem existir estilos personalizados.
 
-Também é possível criar novos temas personalizados a partir das configurações atuais.
+## ✏️ Personalização das Legendas
 
-## ✏️ Personalização
+O editor permite modificar diversos aspectos visuais das legendas.
 
-O editor permite controlar:
+### Tipografia
 
-* Fonte principal
+* Fonte
 * Fonte do destaque
 * Peso da fonte
 * Itálico
-* Maiúsculas/minúsculas
+* Texto em maiúsculas
 * Tamanho
+
+### Posicionamento
+
 * Posição vertical
+* Área segura
+* Proporção do vídeo
+
+### Cores
+
 * Cor do texto
 * Cor do destaque
-* Sombra
 * Cor da sombra
-* Contorno
 * Cor do contorno
-* Fundo do destaque
-* Opacidade do fundo
+* Cor do fundo
+
+### Efeitos
+
+* Sombra
+* Contorno
+* Fundo da palavra
+* Opacidade
 * Raio do fundo
-* Quantidade de palavras por bloco
+* Destaque de palavras
+* Animações
 
-As fontes utilizadas incluem:
+## 🔥 Destaque Palavra por Palavra
 
-* Inter
-* Montserrat
-* Poppins
-* Oswald
-* Bebas Neue
-* Anton
-* Playfair Display
+O editor possui suporte para timestamps individuais das palavras.
+
+Durante a reprodução, a palavra correspondente ao momento atual pode ser destacada automaticamente.
+
+Isso permite criar estilos de legenda semelhantes aos utilizados em vídeos curtos para redes sociais.
 
 ## 📝 Editor de Legendas
 
-Depois da transcrição, as legendas podem ser editadas diretamente no editor.
+Depois da transcrição automática, o usuário pode editar as legendas.
 
 É possível:
 
-* Alterar o texto de cada palavra
-* Alterar início e fim da legenda
-* Dividir uma legenda em duas
-* Apagar uma legenda
+* Alterar o texto
+* Alterar o início da legenda
+* Alterar o final da legenda
+* Dividir uma legenda
+* Excluir uma legenda
 * Adicionar uma nova legenda
-* Pré-visualizar uma legenda
-* Reagrupar as palavras automaticamente
-
-O editor mantém timestamps individuais das palavras quando esses dados estão disponíveis.
+* Reagrupar legendas
+* Visualizar a legenda no vídeo
 
 ## 🎥 Pré-visualização
 
-O vídeo possui uma área de preview em tempo real com:
+O editor possui uma pré-visualização integrada para visualizar o resultado antes da exportação.
 
-* Legendas sincronizadas
-* Destaque da palavra atual
-* Animação de entrada
-* Animação de destaque
-* Área segura
-* Controle de velocidade
-* Play/Pause
-* Mostrar/ocultar legendas
+Recursos disponíveis:
+
+* Reprodução do vídeo
+* Pausar/reproduzir
+* Alteração da velocidade
+* Visualização das legendas
+* Destaque sincronizado
 * Diferentes proporções
+* Área segura
+* Visualização dos estilos
 
-As proporções disponíveis são:
+### Proporções
 
 * Original
 * 9:16
 * 4:5
 * 1:1
 
-## 🎬 Exportação do vídeo
+A proporção **9:16** é especialmente adequada para conteúdos verticais.
 
-A exportação utiliza FFmpeg.wasm diretamente no navegador.
+## 🎬 Exportação do Vídeo
 
-O processo gera frames PNG das legendas e posteriormente os compõe sobre o vídeo utilizando FFmpeg.
+A renderização do vídeo utiliza **FFmpeg.wasm** diretamente no navegador.
 
-O vídeo final é exportado como:
+As legendas são renderizadas e incorporadas ao vídeo durante o processo de exportação.
 
-```text
-video-com-legenda.mp4
-```
+O resultado é gerado como um arquivo de vídeo `.mp4`.
 
-A codificação utiliza:
+### Codificação
 
-* H.264 (`libx264`)
-* Preset `ultrafast`
-* CRF 23
-* Pixel format `yuv420p`
+O projeto utiliza:
+
+* H.264
+* AAC
+* Pixel Format `yuv420p`
 * Áudio AAC
-* 128 kbps
-* `+faststart`
+* Otimização `+faststart`
 
-## 📄 Exportação de Legendas
+O processamento é realizado localmente no navegador.
 
-O projeto permite exportar as legendas separadamente.
+## 📄 Exportação das Legendas
+
+Além do vídeo final, é possível exportar as legendas separadamente.
 
 ### SRT
+
+Formato amplamente utilizado por players de vídeo e plataformas de vídeo.
 
 ```text
 legenda.srt
@@ -215,145 +251,252 @@ legenda.srt
 
 ### VTT
 
+Formato utilizado principalmente em aplicações web.
+
 ```text
 legenda.vtt
 ```
 
 ### TXT
 
+Exportação simples do texto das legendas.
+
 ```text
 legenda.txt
 ```
 
-Os arquivos são gerados diretamente no navegador através de `Blob` e download local.
+## 📥 Importação de Legendas
 
-## 💾 Projetos
+O editor permite importar arquivos:
 
-As configurações e legendas podem ser salvas em um arquivo JSON.
+```text
+.SRT
+.VTT
+```
 
-Exemplo de informações armazenadas:
+Isso permite trabalhar com legendas criadas anteriormente ou provenientes de outras ferramentas.
 
-* Estilo selecionado
-* Posição
+## 💾 Salvamento de Projetos
+
+As configurações do projeto podem ser salvas em um arquivo JSON.
+
+O projeto pode armazenar informações como:
+
+* Estilo
+* Fonte
 * Tamanho
+* Posição
 * Cores
-* Fontes
-* Pesos
-* Maiúsculas
+* Peso
 * Contorno
+* Sombra
 * Fundo
 * Opacidade
-* Raio
-* Blocos de legenda
+* Configurações das legendas
+* Textos
+* Timestamps
 
-O arquivo é salvo como:
+O arquivo pode posteriormente ser carregado novamente no editor.
+
+Exemplo:
 
 ```text
 projeto.json
 ```
 
-Um projeto salvo pode ser carregado posteriormente e aplicado novamente ao vídeo.
+## 🔒 Processamento Local
 
-## 🔒 Privacidade
+O projeto foi desenvolvido com foco em processamento diretamente no navegador.
 
-O processamento foi projetado para acontecer localmente no navegador.
+A transcrição utiliza o modelo Whisper através do Transformers.js e a renderização utiliza FFmpeg.wasm.
 
-O vídeo e o áudio são processados no dispositivo do usuário, enquanto os modelos e bibliotecas necessários são carregados através das CDNs utilizadas pelo projeto.
+Dessa forma, o processamento do vídeo pode ocorrer diretamente no dispositivo do usuário.
 
-A interface apresenta o projeto como:
+Não é necessário um backend próprio para realizar a transcrição ou renderização.
 
-> 100% local · grátis
-
-e informa que o conteúdo não sai do dispositivo durante o processamento.
-
-## ⚙️ Tecnologias
+## 🛠️ Tecnologias
 
 O projeto utiliza:
 
 * HTML5
 * CSS3
-* JavaScript ES Modules
-* Web Audio API
+* JavaScript
+* ES Modules
 * Canvas API
+* Web Audio API
 * WebGPU
+* HTML5 Video API
 * Transformers.js
 * Hugging Face Transformers
 * Whisper
 * FFmpeg.wasm
-* HTML5 Video API
 
-A biblioteca Transformers.js é carregada via CDN:
+### Transformers.js
 
-```text
-https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.2
-```
+Utilizado para executar os modelos de IA diretamente no navegador.
 
-O FFmpeg é carregado sob demanda através da CDN do unpkg.
+### Whisper
 
-## 📦 Estrutura
+Utilizado para realizar a transcrição automática do áudio.
 
-O projeto atual pode funcionar como uma aplicação estática de arquivo único:
+### FFmpeg.wasm
+
+Utilizado para processamento e exportação do vídeo com as legendas incorporadas.
+
+## 📦 Estrutura do Projeto
+
+O projeto atualmente pode funcionar como uma aplicação baseada em um único arquivo:
 
 ```text
 /
 └── index.html
 ```
 
-Todo o HTML, CSS e JavaScript principal estão concentrados no `index.html`.
+O arquivo contém:
 
-As dependências externas são carregadas por CDN.
+* HTML
+* CSS
+* JavaScript
 
-## 🚀 Como executar
+As bibliotecas externas são carregadas através de CDN.
 
-Como o projeto é baseado em HTML, CSS e JavaScript no navegador, basta disponibilizar o `index.html` em um servidor web estático.
+## 🚀 Como Usar
+
+### 1. Abra o editor
+
+Abra o projeto em um navegador moderno.
+
+### 2. Envie o vídeo
+
+Selecione um arquivo de vídeo ou áudio.
+
+### 3. Escolha o idioma
+
+Selecione o idioma da fala ou utilize a detecção automática.
+
+### 4. Escolha o modelo
+
+Selecione o modelo Whisper desejado de acordo com a velocidade e precisão necessárias.
+
+### 5. Inicie a transcrição
+
+O sistema processará o áudio e criará automaticamente as legendas.
+
+### 6. Personalize
+
+Escolha um estilo ou personalize:
+
+* Fonte
+* Tamanho
+* Cores
+* Posição
+* Destaques
+* Contorno
+* Sombra
+* Fundo
+* Animações
+
+### 7. Revise
+
+Utilize a pré-visualização para conferir a sincronização e aparência das legendas.
+
+### 8. Edite
+
+Caso necessário, altere os textos e timestamps manualmente.
+
+### 9. Exporte
+
+Escolha entre:
+
+* Vídeo com legenda
+* SRT
+* VTT
+* TXT
+
+## 🌐 Hospedagem
+
+Por utilizar tecnologias executadas no navegador, o projeto pode ser hospedado em plataformas de hospedagem estática.
 
 Exemplos:
 
 * Vercel
-* GitHub Pages
 * Netlify
+* GitHub Pages
 * Cloudflare Pages
-* Qualquer hospedagem estática
 
-Também pode ser aberto localmente em um navegador moderno, embora alguns recursos de processamento e APIs do navegador funcionem melhor quando servidos por HTTP/HTTPS.
+Não é necessário configurar um servidor backend específico para a funcionalidade principal do editor.
 
-## 🌐 Navegadores
+## 📱 Responsividade
 
-Para melhor desempenho, recomenda-se utilizar versões recentes de:
+A interface foi desenvolvida para funcionar em diferentes tamanhos de tela.
+
+No celular, os elementos da interface são reorganizados para facilitar a utilização.
+
+O editor possui adaptações para:
+
+* Smartphones
+* Tablets
+* Notebooks
+* Desktops
+
+## ⚠️ Desempenho
+
+A transcrição de áudio e a renderização de vídeo são operações que podem consumir bastante CPU, GPU e memória.
+
+O desempenho depende de fatores como:
+
+* Processador
+* GPU
+* Memória RAM
+* Navegador
+* Duração do vídeo
+* Resolução do vídeo
+* Modelo Whisper selecionado
+* Quantidade de legendas
+
+Modelos menores tendem a ser mais rápidos, enquanto modelos maiores podem oferecer maior precisão.
+
+## 💻 Navegadores Recomendados
+
+Recomenda-se utilizar versões atualizadas de navegadores modernos, como:
 
 * Google Chrome
 * Microsoft Edge
 * Firefox
 * Safari
 
-O desempenho da transcrição e exportação depende diretamente do hardware do dispositivo, navegador, disponibilidade de WebGPU, tamanho do vídeo e quantidade de legendas.
+Para melhor desempenho, recomenda-se um navegador com suporte a recursos modernos como WebGPU quando disponível.
 
-## ⚠️ Desempenho
+## 🔐 Privacidade
 
-A transcrição e principalmente a renderização final são operações pesadas.
+O processamento principal do projeto é realizado localmente no navegador.
 
-O FFmpeg é carregado somente quando necessário, reduzindo o carregamento inicial da aplicação. O código também utiliza WebGPU quando disponível e possui fallback para CPU.
+O sistema utiliza modelos e bibliotecas carregados para execução da IA e processamento multimídia no dispositivo.
 
-Vídeos maiores ou projetos com muitas legendas podem exigir mais memória e processamento.
+O objetivo é permitir que o usuário processe seus vídeos sem depender de um servidor próprio para a transcrição e renderização.
 
-## 📱 Responsividade
+## 📌 Características Principais
 
-A interface possui layouts específicos para desktop e dispositivos móveis.
+**Editor automático de legendas com IA diretamente no navegador.**
 
-Em telas menores:
+* 🤖 IA para transcrição
+* 🎬 Vídeos
+* 🔤 Legendas automáticas
+* 🎨 Estilos profissionais
+* ✨ Destaque palavra por palavra
+* ✏️ Editor manual
+* 📱 Formatos para redes sociais
+* 🎥 Exportação de vídeo
+* 📄 Exportação SRT/VTT/TXT
+* 💾 Projetos em JSON
+* ⚡ WebGPU
+* 🔒 Processamento local
 
-* O editor passa para uma única coluna
-* O preview aparece antes dos controles
-* As ações principais ficam em uma barra inferior
-* A grade de estilos se adapta ao tamanho da tela
-* Os controles são reorganizados para uso em telas pequenas
+## 📄 Licença
 
-## 🛡️ Segurança
+Este projeto não especifica uma licença no código fornecido. Portanto, não é definida aqui uma licença de uso, modificação ou distribuição.
 
-O texto das legendas é tratado antes de ser inserido no HTML de preview, utilizando escape de HTML para evitar interpretação direta de conteúdo como markup.
+---
 
-## 🇧🇷 Sobre
-
-**IALegenda** é um editor de legendas focado em criação rápida de vídeos para redes sociais, com processamento local, estilos modernos e recursos de edição diretamente no navegador.
-
-**IALegenda Free · Whisper AI + FFmpeg.wasm · 100% local · Feito no Brasil**
+**Editor Automático de IA que Adiciona Legendas em Vídeos**
+🤖 Whisper AI · 🎬 FFmpeg.wasm · ⚡ WebGPU · 🔒 Processamento Local
