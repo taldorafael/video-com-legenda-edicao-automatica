@@ -1,445 +1,359 @@
-# 🎬 Clipa Free
+# IALegenda — Editor de Legendas
 
-**Legendas automáticas e molduras para vídeos, diretamente no navegador.**
+Editor de legendas para vídeos que funciona diretamente no navegador, com transcrição de áudio por IA, estilos de legendas, destaque palavra por palavra e exportação do vídeo com as legendas incorporadas.
 
-O **Clipa Free** é uma ferramenta web gratuita para edição de vídeos que permite gerar legendas automáticas com IA e aplicar molduras PNG em um ou vários vídeos.
-
-Todo o processamento é realizado diretamente no navegador do usuário, sem necessidade de login, servidor próprio ou upload dos vídeos.
-
----
+O IALegenda foi desenvolvido para funcionar de forma **local no navegador**, sem necessidade de login ou envio do vídeo para um servidor. A transcrição utiliza modelos Whisper através do Transformers.js, enquanto a renderização final do vídeo utiliza FFmpeg.wasm.
 
 ## ✨ Recursos
 
-### 🎤 Legendas Automáticas
+* 🎬 Upload de vídeos e arquivos de áudio
+* 📁 Suporte a MP4, MOV, WebM, MP3 e WAV
+* 🧠 Transcrição automática com Whisper
+* ⚡ Suporte a WebGPU quando disponível
+* 💻 Fallback automático para CPU caso WebGPU não esteja disponível
+* 🌎 Seleção de idioma
+* 🔤 Português (BR), Inglês, Espanhol, Francês, Alemão, Japonês e Coreano
+* 🔍 Detecção automática de idioma
+* 🌐 Tradução da transcrição para inglês
+* 📝 Importação de arquivos `.SRT` e `.VTT`
+* 🎨 Diversos estilos de legendas
+* ✏️ Editor visual de estilos
+* 🔤 Diferentes fontes
+* 💪 Controle de peso da fonte
+* 📐 Controle de tamanho e posição
+* 🎨 Cores personalizáveis
+* 🌈 Destaque de palavras
+* 💥 Animação de destaque palavra por palavra
+* 🖍️ Fundo para palavras destacadas
+* 🌑 Sombra
+* 🖌️ Contorno
+* ✨ Efeitos de glow em estilos compatíveis
+* 🔠 Texto em maiúsculas
+* 📱 Área segura para visualização
+* 📐 Proporções Original, 9:16, 4:5 e 1:1
+* ▶️ Controle de reprodução
+* ⏩ Velocidade de reprodução de 0.5× até 2×
+* ✂️ Divisão de legendas
+* ➕ Adição de novas linhas
+* 🗑️ Exclusão de linhas
+* ⏱️ Edição dos tempos das legendas
+* ✏️ Edição individual do texto
+* 🔄 Reagrupamento automático das legendas
+* 💾 Salvamento de projetos em JSON
+* 📂 Abertura de projetos salvos
+* 📄 Exportação `.SRT`
+* 📄 Exportação `.VTT`
+* 📄 Exportação `.TXT`
+* 🎥 Exportação do vídeo com legendas incorporadas
 
-* Transcrição automática de áudio e vídeo.
-* Processamento local com **Whisper via Transformers.js**.
-* Suporte a múltiplos idiomas.
-* Detecção automática de idioma.
-* Modelos de diferentes níveis de velocidade e precisão:
+A interface também possui uma versão adaptada para dispositivos móveis, incluindo uma barra de ações inferior.
 
-  * Whisper Tiny
-  * Whisper Base
-  * Whisper Small
-  * Whisper Medium
-* Utilização de **WebGPU** quando disponível.
-* Opção de tradução para inglês.
-* Importação de legendas `.SRT` e `.VTT`.
-* Editor visual de legendas.
-* Sincronização das legendas com o vídeo.
-* Reagrupamento automático das linhas.
-* Controle de palavras por linha.
-* Controle da duração máxima das legendas.
-* Edição manual dos textos e tempos.
+## 🤖 Transcrição com IA
 
-O projeto oferece modelos que variam aproximadamente de 40 MB a 770 MB, permitindo escolher entre maior velocidade ou maior precisão.
+A transcrição é executada diretamente no navegador usando:
 
----
+* `@huggingface/transformers`
+* Whisper Tiny
+* Whisper Base
+* Whisper Small
 
-## 🎨 Editor de Legendas
+Modelos disponíveis:
 
-O editor possui diversas opções de personalização:
+| Modelo        | Característica                          |
+| ------------- | --------------------------------------- |
+| Whisper Tiny  | Mais rápido e aproximadamente 40 MB     |
+| Whisper Base  | Equilibrado e aproximadamente 80 MB     |
+| Whisper Small | Maior precisão e aproximadamente 250 MB |
 
-* Posição da legenda.
-* Tamanho da fonte.
-* Cor do texto.
-* Cor de destaque.
-* Tipografia.
-* Alinhamento.
-* Texto em maiúsculas.
-* Contorno.
-* Caixa de fundo.
-* Cor da caixa.
-* Opacidade.
-* Arredondamento.
-* Estilos pré-configurados.
+O projeto utiliza timestamps por palavra para permitir o destaque sincronizado durante a reprodução.
 
-Também existe preview em tempo real, controle de velocidade e opções de proporção:
+Durante o processamento, o editor apresenta etapas como:
+
+1. Transcrevendo áudio
+2. Detectando palavras-chave
+3. Montando legendas
+
+## 🎨 Estilos de Legendas
+
+O editor possui uma biblioteca de estilos prontos, incluindo estilos como:
+
+* HORMOZI 1
+* HORMOZI 2
+* BEAST
+* Negativa
+* Cove
+* LEON
+* LAGUNA
+* Tuba
+* Splitz
+* Aria
+* Stack
+* Lume
+* MARCA
+* Canto
+* Silk
+* SLASH
+* Dense
+* Open
+* Vibe
+* Rise
+* PRISM
+* Neon
+* Ice
+* Sunset
+* Mono
+* Clean
+* Bold Box
+* Podcast
+* Retro
+* Punch
+
+Os estilos podem ser filtrados entre **Todos**, **Padrão** e **Custom**.
+
+Também é possível criar novos temas personalizados a partir das configurações atuais.
+
+## ✏️ Personalização
+
+O editor permite controlar:
+
+* Fonte principal
+* Fonte do destaque
+* Peso da fonte
+* Itálico
+* Maiúsculas/minúsculas
+* Tamanho
+* Posição vertical
+* Cor do texto
+* Cor do destaque
+* Sombra
+* Cor da sombra
+* Contorno
+* Cor do contorno
+* Fundo do destaque
+* Opacidade do fundo
+* Raio do fundo
+* Quantidade de palavras por bloco
+
+As fontes utilizadas incluem:
+
+* Inter
+* Montserrat
+* Poppins
+* Oswald
+* Bebas Neue
+* Anton
+* Playfair Display
+
+## 📝 Editor de Legendas
+
+Depois da transcrição, as legendas podem ser editadas diretamente no editor.
+
+É possível:
+
+* Alterar o texto de cada palavra
+* Alterar início e fim da legenda
+* Dividir uma legenda em duas
+* Apagar uma legenda
+* Adicionar uma nova legenda
+* Pré-visualizar uma legenda
+* Reagrupar as palavras automaticamente
+
+O editor mantém timestamps individuais das palavras quando esses dados estão disponíveis.
+
+## 🎥 Pré-visualização
+
+O vídeo possui uma área de preview em tempo real com:
+
+* Legendas sincronizadas
+* Destaque da palavra atual
+* Animação de entrada
+* Animação de destaque
+* Área segura
+* Controle de velocidade
+* Play/Pause
+* Mostrar/ocultar legendas
+* Diferentes proporções
+
+As proporções disponíveis são:
 
 * Original
 * 9:16
 * 4:5
 * 1:1
 
----
+## 🎬 Exportação do vídeo
 
-## 📤 Exportação de Legendas
+A exportação utiliza FFmpeg.wasm diretamente no navegador.
 
-As legendas podem ser exportadas em:
+O processo gera frames PNG das legendas e posteriormente os compõe sobre o vídeo utilizando FFmpeg.
 
-* `.SRT`
-* `.VTT`
-* `.TXT`
+O vídeo final é exportado como:
 
-O código gera os arquivos diretamente no navegador, sem necessidade de servidor.
+```text
+video-com-legenda.mp4
+```
 
-Também é possível salvar o projeto em `.JSON` e posteriormente carregá-lo novamente para continuar a edição.
+A codificação utiliza:
 
----
+* H.264 (`libx264`)
+* Preset `ultrafast`
+* CRF 23
+* Pixel format `yuv420p`
+* Áudio AAC
+* 128 kbps
+* `+faststart`
 
-## 🎬 Exportação do Vídeo
+## 📄 Exportação de Legendas
 
-O Clipa Free permite gerar um novo vídeo com as legendas incorporadas.
+O projeto permite exportar as legendas separadamente.
 
-A exportação utiliza:
+### SRT
 
-**FFmpeg.wasm**
+```text
+legenda.srt
+```
 
-O FFmpeg é carregado diretamente no navegador e utilizado para gerar o arquivo MP4 final.
+### VTT
 
-Características:
+```text
+legenda.vtt
+```
 
-* Exportação para MP4.
-* Codec H.264.
-* Áudio AAC.
-* Preset `ultrafast`.
-* Compatibilidade com reprodução rápida.
-* Barra de progresso.
-* Cancelamento da exportação.
-* Download automático do vídeo final.
+### TXT
 
-A aplicação também verifica se o arquivo gerado possui conteúdo válido antes de disponibilizá-lo para download.
+```text
+legenda.txt
+```
 
----
+Os arquivos são gerados diretamente no navegador através de `Blob` e download local.
 
-# 🖼️ Moldura em Vídeos
+## 💾 Projetos
 
-A segunda ferramenta permite criar ou importar uma moldura e aplicá-la aos vídeos.
+As configurações e legendas podem ser salvas em um arquivo JSON.
 
-### 📥 Importar moldura
+Exemplo de informações armazenadas:
 
-É possível enviar uma imagem:
+* Estilo selecionado
+* Posição
+* Tamanho
+* Cores
+* Fontes
+* Pesos
+* Maiúsculas
+* Contorno
+* Fundo
+* Opacidade
+* Raio
+* Blocos de legenda
 
-* PNG
-* Com transparência
-* Com área reservada para o vídeo
+O arquivo é salvo como:
 
-A área onde o vídeo será colocado pode ser ajustada visualmente.
+```text
+projeto.json
+```
 
-É possível alterar:
+Um projeto salvo pode ser carregado posteriormente e aplicado novamente ao vídeo.
 
-* X
-* Y
-* Largura
-* Altura
+## 🔒 Privacidade
 
-Também existem ferramentas para:
+O processamento foi projetado para acontecer localmente no navegador.
 
-* 🔍 Detectar área automaticamente
-* ⊕ Centralizar
-* 🗑 Remover moldura
+O vídeo e o áudio são processados no dispositivo do usuário, enquanto os modelos e bibliotecas necessários são carregados através das CDNs utilizadas pelo projeto.
 
----
+A interface apresenta o projeto como:
 
-## 🛠️ Criar Moldura
+> 100% local · grátis
 
-O sistema também permite criar uma moldura diretamente no navegador.
+e informa que o conteúdo não sai do dispositivo durante o processamento.
 
-É possível configurar:
-
-* Foto de perfil.
-* Formato da foto.
-* Username.
-* Legenda.
-* Cor de fundo.
-* Cor do texto.
-* Área do vídeo.
-* Posição do vídeo.
-* Largura.
-* Altura.
-
-Os elementos da composição podem ser movimentados diretamente no preview.
-
-Depois da configuração, a moldura é gerada automaticamente como PNG.
-
----
-
-# 🎥 Processamento em Massa
-
-Uma das principais funcionalidades do Clipa Free é a aplicação de uma mesma moldura em vários vídeos.
-
-É possível:
-
-1. Selecionar uma moldura.
-2. Adicionar vários vídeos.
-3. Visualizar os vídeos na fila.
-4. Processar todos.
-5. Acompanhar o progresso.
-6. Baixar cada resultado individualmente.
-7. Baixar todos os resultados em um único `.ZIP`.
-
-O sistema mantém uma fila de vídeos e registra o status individual de cada processamento.
-
----
-
-## 📦 Download em ZIP
-
-Após finalizar o processamento, todos os vídeos concluídos podem ser agrupados automaticamente em um arquivo `.ZIP`.
-
-O projeto utiliza **JSZip** para criar o arquivo compactado diretamente no navegador.
-
----
-
-# 🔒 Privacidade
-
-O projeto foi desenvolvido com foco em processamento local.
-
-Os vídeos são selecionados pelo usuário e processados no próprio navegador.
-
-Não existe, no `index.html`, um backend próprio para receber os vídeos.
-
-O projeto utiliza modelos e bibliotecas carregados pelo navegador, incluindo Transformers.js e FFmpeg.wasm.
-
-> **Importante:** apesar do processamento dos arquivos ocorrer localmente, o navegador precisa acessar os CDNs utilizados pelo projeto para carregar as bibliotecas e modelos.
-
----
-
-# ⚡ Tecnologias
+## ⚙️ Tecnologias
 
 O projeto utiliza:
 
 * HTML5
 * CSS3
-* JavaScript
+* JavaScript ES Modules
+* Web Audio API
+* Canvas API
+* WebGPU
 * Transformers.js
+* Hugging Face Transformers
 * Whisper
 * FFmpeg.wasm
-* JSZip
-* WebGPU
-* Web APIs
-* File API
-* Blob API
-* Canvas API
-* Local Object URLs
+* HTML5 Video API
 
-A interface e a lógica estão concentradas no `index.html`.
+A biblioteca Transformers.js é carregada via CDN:
 
----
+```text
+https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.2
+```
 
-# 📁 Estrutura
+O FFmpeg é carregado sob demanda através da CDN do unpkg.
 
-O projeto pode funcionar com uma estrutura extremamente simples:
+## 📦 Estrutura
+
+O projeto atual pode funcionar como uma aplicação estática de arquivo único:
 
 ```text
 /
-├── index.html
-└── README.md
+└── index.html
 ```
 
-O `index.html` contém:
+Todo o HTML, CSS e JavaScript principal estão concentrados no `index.html`.
 
-* HTML
-* CSS
-* JavaScript
-* Interface
-* Editor
-* Processamento
-* Exportação
-* Integrações via CDN
+As dependências externas são carregadas por CDN.
 
----
+## 🚀 Como executar
 
-# 🚀 Como usar
+Como o projeto é baseado em HTML, CSS e JavaScript no navegador, basta disponibilizar o `index.html` em um servidor web estático.
 
-## 1. Clone o repositório
-
-```bash
-git clone https://github.com/SEU-USUARIO/SEU-REPOSITORIO.git
-```
-
-## 2. Entre na pasta
-
-```bash
-cd SEU-REPOSITORIO
-```
-
-## 3. Abra o projeto
-
-Como o projeto é baseado em HTML, CSS e JavaScript no navegador, não é necessário um backend.
-
-Para melhor compatibilidade com módulos JavaScript, WebGPU e recursos do navegador, recomenda-se executar através de um servidor local.
-
-Exemplo:
-
-```bash
-npx serve .
-```
-
-Depois abra o endereço indicado pelo servidor.
-
----
-
-# 🌐 Deploy
-
-O projeto pode ser hospedado em serviços de hospedagem estática, como:
+Exemplos:
 
 * Vercel
-* Netlify
 * GitHub Pages
+* Netlify
 * Cloudflare Pages
-* Outros hosts compatíveis com sites estáticos
+* Qualquer hospedagem estática
 
-Não é necessário configurar um servidor backend para as funcionalidades principais.
+Também pode ser aberto localmente em um navegador moderno, embora alguns recursos de processamento e APIs do navegador funcionem melhor quando servidos por HTTP/HTTPS.
 
----
-
-# 🌐 Navegadores
+## 🌐 Navegadores
 
 Para melhor desempenho, recomenda-se utilizar versões recentes de:
 
 * Google Chrome
 * Microsoft Edge
+* Firefox
+* Safari
 
-Especialmente para processamento pesado com FFmpeg.wasm e utilização de WebGPU.
+O desempenho da transcrição e exportação depende diretamente do hardware do dispositivo, navegador, disponibilidade de WebGPU, tamanho do vídeo e quantidade de legendas.
 
-O projeto detecta a disponibilidade de `SharedArrayBuffer` e informa quando o navegador não oferece o recurso, situação que pode deixar o processamento mais lento.
+## ⚠️ Desempenho
 
----
+A transcrição e principalmente a renderização final são operações pesadas.
 
-# 📱 Responsividade
+O FFmpeg é carregado somente quando necessário, reduzindo o carregamento inicial da aplicação. O código também utiliza WebGPU quando disponível e possui fallback para CPU.
 
-A interface foi desenvolvida para funcionar em:
+Vídeos maiores ou projetos com muitas legendas podem exigir mais memória e processamento.
 
-* 💻 Desktop
-* 💻 Notebook
-* 📱 Celular
-* 📲 Tablet
+## 📱 Responsividade
 
-No celular existe uma barra de ações específica para facilitar a exportação e o gerenciamento das legendas.
+A interface possui layouts específicos para desktop e dispositivos móveis.
 
----
+Em telas menores:
 
-# 🎯 Fluxo de Legendas
+* O editor passa para uma única coluna
+* O preview aparece antes dos controles
+* As ações principais ficam em uma barra inferior
+* A grade de estilos se adapta ao tamanho da tela
+* Os controles são reorganizados para uso em telas pequenas
 
-```text
-Selecionar vídeo
-       ↓
-Escolher idioma
-       ↓
-Escolher modelo Whisper
-       ↓
-Transcrição no navegador
-       ↓
-Editor de legendas
-       ↓
-Personalizar estilo
-       ↓
-Visualizar no vídeo
-       ↓
-Exportar
-       ↓
-MP4 / SRT / VTT / TXT
-```
+## 🛡️ Segurança
 
----
+O texto das legendas é tratado antes de ser inserido no HTML de preview, utilizando escape de HTML para evitar interpretação direta de conteúdo como markup.
 
-# 🎯 Fluxo de Moldura
+## 🇧🇷 Sobre
 
-```text
-Criar ou enviar PNG
-       ↓
-Definir área do vídeo
-       ↓
-Adicionar vídeos
-       ↓
-Criar fila
-       ↓
-Aplicar moldura
-       ↓
-Processamento com FFmpeg
-       ↓
-Vídeos finalizados
-       ↓
-Download individual
-       ↓
-ou
-       ↓
-Download de todos em ZIP
-```
+**IALegenda** é um editor de legendas focado em criação rápida de vídeos para redes sociais, com processamento local, estilos modernos e recursos de edição diretamente no navegador.
 
----
-
-# 💾 Projetos
-
-O editor de legendas permite salvar as configurações em um arquivo JSON.
-
-O projeto salvo pode conter:
-
-* Estilo selecionado.
-* Posição.
-* Tamanho.
-* Cores.
-* Fonte.
-* Alinhamento.
-* Contorno.
-* Fundo.
-* Opacidade.
-* Arredondamento.
-* Linhas e tempos das legendas.
-
-Isso permite salvar o trabalho e carregá-lo posteriormente.
-
----
-
-# ⚠️ Desempenho
-
-O processamento acontece no dispositivo do usuário.
-
-Consequentemente, o desempenho depende principalmente de:
-
-* CPU.
-* GPU.
-* Memória RAM.
-* Navegador.
-* Duração do vídeo.
-* Resolução do vídeo.
-* Modelo Whisper escolhido.
-* Quantidade de vídeos processados simultaneamente.
-
-Modelos menores são mais rápidos e consomem menos recursos, enquanto modelos maiores podem apresentar maior precisão e exigir mais memória.
-
-O FFmpeg também precisa ser carregado na primeira utilização, aumentando o tempo inicial de carregamento.
-
----
-
-# 🔐 Sem Login
-
-O Clipa Free não exige:
-
-* Cadastro.
-* Login.
-* Senha.
-* Conta.
-* Cartão de crédito.
-
-A proposta do projeto é oferecer as ferramentas diretamente no navegador.
-
----
-
-# 🆓 Gratuito
-
-O projeto foi desenvolvido para uso gratuito e sem marca d'água.
-
-Não existe cobrança por quantidade de vídeos dentro da aplicação.
-
----
-
-# 🧩 Código Aberto
-
-O projeto possui a lógica principal concentrada no `index.html` e pode ser utilizado como base para desenvolvimento de novas ferramentas de edição de vídeo no navegador.
-
----
-
-# 📜 Licença
-
-Este repositório não define uma licença de software explicitamente no `index.html`.
-
-Se você disponibilizar o projeto publicamente no GitHub, recomenda-se adicionar uma licença apropriada ao repositório, como MIT, caso queira permitir reutilização e modificação do código.
-
----
-
-## 🎬 Clipa Free
-
-**Legendas automáticas + molduras para vídeos.**
-
-> 🔒 Local • ⚡ Rápido • 🆓 Gratuito • 🎬 Sem servidor
+**IALegenda Free · Whisper AI + FFmpeg.wasm · 100% local · Feito no Brasil**
