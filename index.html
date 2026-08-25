@@ -660,49 +660,98 @@ const STYLES = [
   { n:'Mont + Bebas', cat:'mixed', css:{color:'#ffffff',hl:'#f472b6',stroke:'#000000',strokeW:4,shadow:50,font:'montserrat',hlFont:'bebas',up:true,weight:'900',hlWeight:'400'} },
   { n:'Pop + Oswald', cat:'mixed', css:{color:'#ffffff',hl:'#4ade80',stroke:'#000000',strokeW:3,shadow:45,font:'poppins',hlFont:'oswald',up:true,weight:'800',hlWeight:'700'} },
 
-  /* ── tscaps (baseado nos prints do editor) ── */
+  /* ── tscaps = prints (fontes já no <link> Google Fonts) ── */
+  /* fullBg:true = fundo na faixa inteira | hlBg:true = caixa só na palavra ativa */
 
-  /* img1 · elegante itálico creme */
-  { n:'MIRA', cat:'tscaps', css:{color:'#f5f0e8',hl:'#ffffff',strokeW:0,shadow:40,font:'poppins',hlFont:'poppins',italic:true,weight:'600',hlWeight:'700'} },
+  /* Print 1 · itálico creme */
+  { n:'MIRA', cat:'tscaps', css:{
+    color:'#f3eee6', hl:'#ffffff', strokeW:0, shadow:38,
+    font:'poppins', hlFont:'poppins', italic:true, weight:'600', hlWeight:'700'
+  }},
 
-  /* img2 · ouro metálico uppercase */
-  { n:'GOLD', cat:'tscaps', css:{color:'#f5d76e',hl:'#fff3b0',stroke:'#5c3d0a',strokeW:3,shadow:55,font:'anton',hlFont:'anton',up:true,weight:'400',glow:true,glowColor:'#f0c040'} },
+  /* Print 2 · ouro metálico */
+  { n:'GOLD', cat:'tscaps', css:{
+    color:'#e8c547', hl:'#fff0a0', stroke:'#4a3208', strokeW:4, shadow:60,
+    font:'anton', hlFont:'anton', up:true, weight:'400',
+    glow:true, glowColor:'#f0c040'
+  }},
 
-  /* img3/4 · branco limpo bold uppercase */
-  { n:'CLEAN', cat:'tscaps', css:{color:'#ffffff',hl:'#ffffff',stroke:'#000000',strokeW:3,shadow:45,font:'montserrat',hlFont:'montserrat',up:true,weight:'900'} },
+  /* Print 3–4 · branco limpo bold */
+  { n:'CLEAN', cat:'tscaps', css:{
+    color:'#ffffff', hl:'#ffffff', stroke:'#000000', strokeW:2, shadow:42,
+    font:'montserrat', hlFont:'montserrat', up:true, weight:'900'
+  }},
 
-  /* img6/11 · branco + amarelo + contorno preto grosso (viral clássico) */
-  { n:'LOKI', cat:'tscaps', css:{color:'#ffffff',hl:'#ffe600',stroke:'#000000',strokeW:7,shadow:50,font:'impact',hlFont:'impact',up:true,weight:'900'} },
+  /* Print 6 + 11 · viral amarelo + contorno preto */
+  { n:'LOKI', cat:'tscaps', css:{
+    color:'#ffffff', hl:'#ffe600', stroke:'#000000', strokeW:7, shadow:48,
+    font:'impact', hlFont:'impact', up:true, weight:'900'
+  }},
 
-  /* img7 · caixa vermelha na palavra (Hormozi) */
-  { n:'LEVI', cat:'tscaps', css:{color:'#ffffff',hl:'#ffffff',bg:'#e11d48',stroke:'#000000',strokeW:3,shadow:40,font:'montserrat',hlFont:'montserrat',up:true,weight:'900'} },
+  /* Print 7 · caixa vermelha SÓ na palavra */
+  { n:'LEVI', cat:'tscaps', css:{
+    color:'#ffffff', hl:'#ffffff', bg:'#e11d48', hlBg:true,
+    stroke:'#000000', strokeW:2, shadow:36,
+    font:'montserrat', hlFont:'montserrat', up:true, weight:'900'
+  }},
 
-  /* img10 · branco + ciano */
-  { n:'ENZO', cat:'tscaps', css:{color:'#ffffff',hl:'#2ee6c5',stroke:'#000000',strokeW:5,shadow:50,font:'montserrat',hlFont:'montserrat',up:true,weight:'900'} },
+  /* Print 10 · branco + ciano */
+  { n:'ENZO', cat:'tscaps', css:{
+    color:'#ffffff', hl:'#2dd4bf', stroke:'#000000', strokeW:5, shadow:48,
+    font:'montserrat', hlFont:'montserrat', up:true, weight:'900'
+  }},
 
-  /* img13 · barra preta + palavra amarela */
-  { n:'BAR', cat:'tscaps', css:{color:'#ffffff',hl:'#facc15',bg:'#111111',strokeW:0,shadow:25,font:'inter',hlFont:'inter',weight:'700',hlWeight:'900'} },
+  /* Print 13 · barra preta na faixa inteira + vila amarelo */
+  { n:'BAR', cat:'tscaps', css:{
+    color:'#ffffff', hl:'#facc15', bg:'#0a0a0a', fullBg:true,
+    strokeW:0, shadow:18,
+    font:'inter', hlFont:'inter', weight:'700', hlWeight:'900'
+  }},
 
-  /* img8 · verde suave */
-  { n:'MILO', cat:'tscaps', css:{color:'#4ade80',hl:'#86efac',strokeW:0,shadow:35,font:'poppins',hlFont:'poppins',weight:'800'} },
+  /* Print 8 · verde */
+  { n:'MILO', cat:'tscaps', css:{
+    color:'#4ade80', hl:'#86efac', strokeW:0, shadow:32,
+    font:'poppins', hlFont:'poppins', weight:'800'
+  }},
 
-  /* img5 · roxo destaque grande */
-  { n:'LYRA', cat:'tscaps', css:{color:'#ffffff',hl:'#a78bfa',strokeW:0,shadow:30,font:'poppins',hlFont:'bebas',weight:'600',hlWeight:'400',glow:true,glowColor:'#8b5cf6'} },
+  /* Print 5 · roxo */
+  { n:'LYRA', cat:'tscaps', css:{
+    color:'#f8fafc', hl:'#a78bfa', strokeW:0, shadow:28,
+    font:'poppins', hlFont:'bebas', weight:'600', hlWeight:'400',
+    glow:true, glowColor:'#8b5cf6'
+  }},
 
-  /* img14 · serif creme literário */
-  { n:'PASTOR', cat:'tscaps', css:{color:'#f0e6d3',hl:'#fff8ee',strokeW:0,shadow:35,font:'poppins',hlFont:'poppins',italic:true,weight:'500'} },
+  /* Print 14 · creme literário */
+  { n:'PASTOR', cat:'tscaps', css:{
+    color:'#efe6d5', hl:'#fff9f0', strokeW:0, shadow:30,
+    font:'poppins', hlFont:'poppins', italic:true, weight:'500'
+  }},
 
-  /* img9 · outline forte branco/amarelo (emoji-ready) */
-  { n:'BEAST', cat:'tscaps', css:{color:'#ffffff',hl:'#fde047',stroke:'#000000',strokeW:8,shadow:55,font:'impact',hlFont:'impact',up:true,weight:'900'} },
+  /* Print 9 + 12 · outline forte */
+  { n:'BEAST', cat:'tscaps', css:{
+    color:'#ffffff', hl:'#fde047', stroke:'#000000', strokeW:8, shadow:52,
+    font:'impact', hlFont:'impact', up:true, weight:'900'
+  }},
 
-  /* bolha azul (Lena) */
-  { n:'LENA', cat:'tscaps', css:{color:'#ffffff',hl:'#ffffff',bg:'#2997ff',strokeW:0,shadow:20,font:'inter',hlFont:'inter',weight:'700',hlWeight:'900'} },
+  /* Lena · bolha azul na palavra */
+  { n:'LENA', cat:'tscaps', css:{
+    color:'#ffffff', hl:'#ffffff', bg:'#2997ff', hlBg:true,
+    strokeW:0, shadow:18,
+    font:'inter', hlFont:'inter', weight:'700', hlWeight:'900'
+  }},
 
-  /* terminal verde (Nyx) */
-  { n:'NYX', cat:'tscaps', css:{color:'#00ff41',hl:'#39ff14',bg:'#0d1117',strokeW:0,shadow:0,font:'inter',hlFont:'inter',weight:'500',glow:true,glowColor:'#00ff41'} },
+  /* Nyx · terminal fundo inteiro */
+  { n:'NYX', cat:'tscaps', css:{
+    color:'#00ff41', hl:'#39ff14', bg:'#0d1117', fullBg:true,
+    strokeW:0, shadow:0,
+    font:'inter', hlFont:'inter', weight:'500', glow:true, glowColor:'#00ff41'
+  }},
 
-  /* laranja pop */
-  { n:'ELIO', cat:'tscaps', css:{color:'#ffffff',hl:'#ff6b35',stroke:'#000000',strokeW:5,shadow:50,font:'poppins',hlFont:'poppins',up:true,weight:'800'} },
+  /* Elio · laranja */
+  { n:'ELIO', cat:'tscaps', css:{
+    color:'#ffffff', hl:'#ff6b35', stroke:'#000000', strokeW:5, shadow:48,
+    font:'poppins', hlFont:'poppins', up:true, weight:'800'
+  }},
 ];
 
 const state = {
@@ -870,10 +919,12 @@ function applyStyle(i) {
   $('sizeD').value = $('size').value; $('sizeDv').textContent = $('size').value+' px';
   $('posD').value = $('pos').value; $('posDv').textContent = $('pos').value+'%';
   $('sepName').textContent = STYLES[i].n;
-  const hasBg = !!s.bg;
-  $$('.hlbg-btn').forEach(b=>b.classList.toggle('on', (b.dataset.v==='on')===hasBg));
-  $('hlbgOpts').classList.toggle('hidden', !hasBg);
-  if (hasBg && (s.bg||'').startsWith('#')) $('bgCol').value = s.bg;
+  // hlBg = caixa só na palavra | fullBg = faixa inteira | se só bg sem flag → hlBg
+  const wantWordBg = !!(s.hlBg || (s.bg && !s.fullBg));
+  const wantFullBg = !!(s.fullBg && s.bg);
+  $$('.hlbg-btn').forEach(b=>b.classList.toggle('on', (b.dataset.v==='on')===wantWordBg));
+  $('hlbgOpts').classList.toggle('hidden', !wantWordBg);
+  if ((wantWordBg||wantFullBg) && (s.bg||'').startsWith('#')) $('bgCol').value = s.bg;
   syncStyleBtns();
   schedRender();
 }
@@ -887,7 +938,9 @@ function syncStyleBtns() {
 
 function isHlBgOn() {
   const b = document.querySelector('.hlbg-btn.on');
-  return b ? b.dataset.v==='on' : !!(STYLES[state.activeStyle]?.css?.bg);
+  if (b) return b.dataset.v==='on';
+  const s = STYLES[state.activeStyle]?.css||{};
+  return !!(s.hlBg || (s.bg && !s.fullBg));
 }
 
 function getFont(hl=false) {
