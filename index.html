@@ -158,23 +158,36 @@ img,video{max-width:100%;display:block}
 .stage video{max-width:100%;max-height:100%;width:100%;height:auto;object-fit:contain}
 .stage.r916 video{height:100%;width:100%;object-fit:cover}
 
-/* Caption – fixed overflow */
+/* ===== CAPTION – FIXED WRAP ===== */
 .cap-layer{
-  position:absolute;text-align:center;pointer-events:none;
-  white-space:normal;word-break:break-word;overflow-wrap:anywhere;
-  font-weight:900;line-height:1.18;transform:translateY(-50%);
-  z-index:5;padding:0 2%;max-width:92%;box-sizing:border-box;
+  position:absolute;
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  align-items:center;
+  gap:0.12em 0.28em;
+  text-align:center;
+  pointer-events:none;
+  font-weight:900;
+  line-height:1.15;
+  transform:translateY(-50%);
+  z-index:5;
+  box-sizing:border-box;
+  /* important: never overflow */
+  max-width:78%;
+  left:11%;
+  right:11%;
+  width:78%;
 }
 .cap-bg{position:absolute;pointer-events:none;z-index:4}
 .wm{position:absolute;top:9px;left:10px;z-index:6;font-size:10px;font-weight:700;color:rgba(255,255,255,.28);letter-spacing:.08em;pointer-events:none;text-shadow:0 1px 4px rgba(0,0,0,.5);display:none}
 .wm.show{display:block}
 
-/* Safe area – stronger red zones */
 .safe-ov{
   position:absolute;inset:0;pointer-events:none;z-index:4;display:none;
   background:
-    linear-gradient(to right, rgba(239,68,68,.38) 0%, rgba(239,68,68,.18) 6%, transparent 12%, transparent 88%, rgba(239,68,68,.18) 94%, rgba(239,68,68,.38) 100%),
-    linear-gradient(to bottom, rgba(239,68,68,.28) 0%, rgba(239,68,68,.12) 5%, transparent 10%, transparent 90%, rgba(239,68,68,.12) 95%, rgba(239,68,68,.32) 100%);
+    linear-gradient(to right, rgba(239,68,68,.40) 0%, rgba(239,68,68,.18) 7%, transparent 13%, transparent 87%, rgba(239,68,68,.18) 93%, rgba(239,68,68,.40) 100%),
+    linear-gradient(to bottom, rgba(239,68,68,.30) 0%, rgba(239,68,68,.12) 6%, transparent 11%, transparent 89%, rgba(239,68,68,.12) 94%, rgba(239,68,68,.32) 100%);
 }
 .safe-ov.on{display:block}
 
@@ -196,38 +209,38 @@ img,video{max-width:100%;display:block}
 .icbtn.on{border-color:var(--blue);color:var(--blue);background:var(--blues)}
 .playbtns{display:flex;justify-content:center;gap:5px;padding:0 11px 11px}
 
-/* Word animations – CapCut style */
+/* Word element – each word stays together, container wraps */
 .cw-el{
-  display:inline-block;margin:0 .03em;padding:0 .04em;position:relative;
+  display:inline-block;
+  white-space:nowrap;
+  margin:0;
+  padding:0.02em 0.06em;
+  position:relative;
   will-change:transform,color,background-color,opacity;
   transition:transform .13s cubic-bezier(.34,1.56,.64,1),color .09s linear,background-color .09s linear,opacity .12s;
-  backface-visibility:hidden;transform-origin:50% 70%;
+  backface-visibility:hidden;
+  transform-origin:50% 70%;
 }
 .cw-el.on{z-index:2}
 
-/* Pop (default) */
-@keyframes wPop{0%{transform:scale(1)}25%{transform:scale(1.34)}55%{transform:scale(1.08)}100%{transform:scale(1.16)}}
-.anim-pop .cw-el.on{transform:scale(1.16)}
+@keyframes wPop{0%{transform:scale(1)}25%{transform:scale(1.34)}55%{transform:scale(1.08)}100%{transform:scale(1.18)}}
+.anim-pop .cw-el.on{transform:scale(1.18)}
 .anim-pop .cw-el.on.pop{animation:wPop .30s cubic-bezier(.22,1.35,.36,1) forwards}
 
-/* Bounce */
-@keyframes wBounce{0%{transform:translateY(0) scale(1)}30%{transform:translateY(-10px) scale(1.2)}55%{transform:translateY(3px) scale(1.08)}100%{transform:translateY(0) scale(1.14)}}
-.anim-bounce .cw-el.on{transform:scale(1.14)}
+@keyframes wBounce{0%{transform:translateY(0) scale(1)}30%{transform:translateY(-11px) scale(1.22)}55%{transform:translateY(3px) scale(1.08)}100%{transform:translateY(0) scale(1.16)}}
+.anim-bounce .cw-el.on{transform:scale(1.16)}
 .anim-bounce .cw-el.on.pop{animation:wBounce .34s cubic-bezier(.22,1.4,.36,1) forwards}
 
-/* Scale soft */
-@keyframes wScale{0%{transform:scale(1);opacity:.85}40%{transform:scale(1.22)}100%{transform:scale(1.12)}}
-.anim-scale .cw-el.on{transform:scale(1.12)}
+@keyframes wScale{0%{transform:scale(1);opacity:.85}40%{transform:scale(1.24)}100%{transform:scale(1.14)}}
+.anim-scale .cw-el.on{transform:scale(1.14)}
 .anim-scale .cw-el.on.pop{animation:wScale .26s ease-out forwards}
 
-/* Fade + lift */
-@keyframes wFade{0%{opacity:.4;transform:translateY(8px) scale(.92)}100%{opacity:1;transform:translateY(0) scale(1.1)}}
-.anim-fade .cw-el.on{transform:scale(1.1);opacity:1}
+@keyframes wFade{0%{opacity:.35;transform:translateY(9px) scale(.9)}100%{opacity:1;transform:translateY(0) scale(1.12)}}
+.anim-fade .cw-el.on{transform:scale(1.12);opacity:1}
 .anim-fade .cw-el.on.pop{animation:wFade .28s cubic-bezier(.22,1,.36,1) forwards}
 
-/* Slide from bottom */
-@keyframes wSlide{0%{opacity:0;transform:translateY(14px) scale(.9)}100%{opacity:1;transform:translateY(0) scale(1.12)}}
-.anim-slide .cw-el.on{transform:scale(1.12)}
+@keyframes wSlide{0%{opacity:0;transform:translateY(16px) scale(.88)}100%{opacity:1;transform:translateY(0) scale(1.14)}}
+.anim-slide .cw-el.on{transform:scale(1.14)}
 .anim-slide .cw-el.on.pop{animation:wSlide .30s cubic-bezier(.22,1.2,.36,1) forwards}
 
 @keyframes capIn{0%{opacity:0;transform:translateY(-50%) translateY(10px) scale(.96)}100%{opacity:1;transform:translateY(-50%) scale(1)}}
@@ -273,7 +286,7 @@ img,video{max-width:100%;display:block}
 <section id="upSection" class="up-wrap">
   <div class="hero">
     <h1>Legendas <span class="g">virais</span><br/>em segundos</h1>
-    <p>Estilos CapCut + fontes misturadas + animações. Qualidade adaptativa ao seu aparelho.</p>
+    <p>Estilos CapCut + fontes misturadas + animações. Preview agora quebra linha igual ao vídeo final.</p>
   </div>
 
   <div class="dropzone" id="drop" tabindex="0" role="button">
@@ -331,8 +344,8 @@ img,video{max-width:100%;display:block}
       <span>Nada sai do seu dispositivo</span>
     </div>
     <div class="feat">
-      <strong><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Adaptativo</strong>
-      <span>Qualidade automática pelo aparelho</span>
+      <strong><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Preview = vídeo</strong>
+      <span>Quebra de linha igual no download</span>
     </div>
     <div class="feat">
       <strong><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Estilos CapCut</strong>
@@ -359,7 +372,7 @@ img,video{max-width:100%;display:block}
       <div class="sgrid" id="sgrid" role="listbox"></div>
       <div class="qbar">
         <label>Pos<input type="range" id="pos" min="12" max="90" value="78"/><span id="posv">78%</span></label>
-        <label>Tam<input type="range" id="size" min="22" max="100" value="52"/><span id="sizev">52px</span></label>
+        <label>Tam<input type="range" id="size" min="22" max="90" value="48"/><span id="sizev">48px</span></label>
         <label>Texto<input type="color" id="c1" value="#ffffff"/></label>
         <label>Destaque<input type="color" id="c2" value="#22e06b"/></label>
         <label class="chk" style="font-size:10.5px;font-weight:600;color:var(--txt3)"><input type="checkbox" id="upTog"/> AA</label>
@@ -403,7 +416,7 @@ img,video{max-width:100%;display:block}
         <button type="button" class="stybtn on" id="btnAA">AA</button>
         <button type="button" class="stybtn" id="btnAa">Aa</button>
       </div>
-      <div class="slbl">Animação da palavra</div>
+      <div class="slbl">Animação da palavra (só no preview)</div>
       <div class="anim-row">
         <button type="button" class="anim-btn on" data-anim="pop">Pop</button>
         <button type="button" class="anim-btn" data-anim="bounce">Bounce</button>
@@ -411,7 +424,7 @@ img,video{max-width:100%;display:block}
         <button type="button" class="anim-btn" data-anim="fade">Fade</button>
         <button type="button" class="anim-btn" data-anim="slide">Slide</button>
       </div>
-      <div class="ctrlrow">Tamanho<input type="range" id="sizeD" min="18" max="110" value="52"/><span class="ctrlval" id="sizeDv">52 px</span></div>
+      <div class="ctrlrow">Tamanho<input type="range" id="sizeD" min="18" max="90" value="48"/><span class="ctrlval" id="sizeDv">48 px</span></div>
       <div class="colrow"><label>Cor texto<input type="color" id="c1D" value="#ffffff"/></label></div>
       <div class="ctrlrow">Sombra<input type="range" id="shadowAmt" min="0" max="100" value="55"/><span class="ctrlval" id="shadowAmtv">55%</span></div>
       <div class="colrow"><label>Cor sombra<input type="color" id="shadowCol" value="#000000"/></label></div>
@@ -510,7 +523,7 @@ img,video{max-width:100%;display:block}
 </div>
 
 <footer class="site-footer">
-  <p>100% local · Whisper + FFmpeg · Estilos CapCut / TikTok</p>
+  <p>100% local · Whisper + FFmpeg · Preview com quebra de linha igual ao vídeo</p>
 </footer>
 
 <script type="module">
@@ -588,12 +601,9 @@ if (PERF === 'low') {
   $('modelSel').value = 'Xenova/whisper-tiny';
   $('gpuChk').checked = false;
   $('maxWords').value = 3;
-} else if (PERF === 'mid') {
-  $('modelSel').value = 'Xenova/whisper-base';
-  $('maxWords').value = 4;
 } else {
   $('modelSel').value = 'Xenova/whisper-base';
-  $('maxWords').value = 4;
+  $('maxWords').value = 3;
 }
 
 const FONTS = {
@@ -607,9 +617,7 @@ const FONTS = {
   impact: '"Archivo Black",Impact,"Arial Black",sans-serif',
 };
 
-/* ── STYLES – mixed fonts + CapCut / Clipa style ── */
 const STYLES = [
-  // Classic
   { n:'HORMOZI 1', cat:'padrao', css:{color:'#ffffff',hl:'#22e06b',strokeW:0,shadow:84,font:'montserrat',hlFont:'montserrat',up:true,weight:'900'} },
   { n:'HORMOZI 2', cat:'padrao', css:{color:'#ffffff',hl:'#f9ea03',strokeW:0,shadow:84,font:'montserrat',hlFont:'montserrat',up:true,weight:'900'} },
   { n:'BEAST',     cat:'padrao', css:{color:'#f9ea03',hl:'#ffffff',stroke:'#000000',strokeW:5,shadow:45,font:'impact',hlFont:'impact',up:true,weight:'900'} },
@@ -636,8 +644,6 @@ const STYLES = [
   { n:'Podcast',   cat:'custom', css:{color:'#ffffff',hl:'#7cf6ff',stroke:'#000000',strokeW:4,shadow:45,font:'oswald',hlFont:'oswald',weight:'700'} },
   { n:'Retro',     cat:'custom', css:{color:'#ffe9c7',hl:'#ff5757',stroke:'#5b1f00',strokeW:5,shadow:45,font:'bebas',hlFont:'bebas',italic:true,weight:'400'} },
   { n:'Punch',     cat:'custom', css:{color:'#ffffff',hl:'#ffe600',bg:'#1a6dff',stroke:'#000000',strokeW:3,shadow:45,font:'anton',hlFont:'anton',up:true,weight:'400'} },
-
-  // TikTok / CapCut viral
   { n:'TikTok Classic', cat:'tiktok', css:{color:'#ffffff',hl:'#00f2ea',stroke:'#000000',strokeW:4,shadow:50,font:'montserrat',hlFont:'montserrat',up:true,weight:'900'} },
   { n:'CapCut Pop', cat:'tiktok', css:{color:'#ffffff',hl:'#ff0050',stroke:'#000000',strokeW:5,shadow:55,font:'poppins',hlFont:'poppins',up:true,weight:'900'} },
   { n:'MrBeast', cat:'tiktok', css:{color:'#ffffff',hl:'#00ff88',stroke:'#000000',strokeW:6,shadow:60,font:'impact',hlFont:'impact',up:true,weight:'900'} },
@@ -645,8 +651,6 @@ const STYLES = [
   { n:'Clean White', cat:'tiktok', css:{color:'#ffffff',hl:'#ffffff',stroke:'#000000',strokeW:3,shadow:40,font:'inter',hlFont:'inter',weight:'800'} },
   { n:'Pink Viral', cat:'tiktok', css:{color:'#ffffff',hl:'#ff4d9a',stroke:'#000000',strokeW:4,shadow:45,font:'bebas',hlFont:'bebas',up:true,weight:'400'} },
   { n:'Clipa Glow', cat:'tiktok', css:{color:'#ffffff',hl:'#67e8f9',strokeW:0,shadow:0,font:'montserrat',hlFont:'bebas',up:true,weight:'900',glow:true,glowColor:'#22d3ee'} },
-
-  // Mixed fonts (CapCut style)
   { n:'Inter + Bebas', cat:'mixed', css:{color:'#ffffff',hl:'#22e06b',stroke:'#000000',strokeW:3,shadow:50,font:'inter',hlFont:'bebas',up:true,weight:'800',hlWeight:'400'} },
   { n:'Mont + Anton', cat:'mixed', css:{color:'#ffffff',hl:'#f9ea03',stroke:'#000000',strokeW:4,shadow:55,font:'montserrat',hlFont:'anton',up:true,weight:'900',hlWeight:'400'} },
   { n:'Pop + Impact', cat:'mixed', css:{color:'#ffffff',hl:'#ff0050',stroke:'#000000',strokeW:5,shadow:50,font:'poppins',hlFont:'impact',up:true,weight:'800',hlWeight:'900'} },
@@ -682,7 +686,7 @@ function wordsFromChunk(c) {
 }
 
 function groupWords(words, fallbackText, maxW, maxDur) {
-  maxW = Math.max(1, maxW||4);
+  maxW = Math.max(1, Math.min(6, maxW||3));
   if (!words.length) {
     if (!String(fallbackText||'').trim()) return [];
     return [{ start:0, end:5, text:String(fallbackText).trim(), words:null }];
@@ -701,9 +705,7 @@ function groupWords(words, fallbackText, maxW, maxDur) {
     cur.push(w);
     const et = w.timestamp[1] ?? w.timestamp[0];
     const dur = et - cur[0].timestamp[0];
-    // Prefer shorter groups when maxWords is high to avoid overflow
-    const softMax = maxW >= 5 ? Math.min(maxW, 5) : maxW;
-    if (cur.length >= softMax || dur > maxDur || /[.!?]$/.test(String(w.text||'').trim())) {
+    if (cur.length >= maxW || dur > maxDur || /[.!?]$/.test(String(w.text||'').trim())) {
       out.push(mkGroup(cur)); cur = [];
     }
   }
@@ -964,23 +966,16 @@ function render() {
   const s = STYLES[state.activeStyle]?.css; if (!s) return;
   const r = videoRect();
   const rawSz = +$('size').value;
-  const sz = rawSz * (r.h/1080)||rawSz;
+  const sz = Math.max(16, rawSz * (r.h/1080) || rawSz);
   const pos = +$('pos').value;
 
-  // FIXED: narrower width + more side padding so letters never cut
-  const sidePad = r.w * 0.09;          // 9% each side
-  const capW    = r.w - sidePad * 2;
-  cap.style.cssText = `
-    left:${r.x + sidePad}px;
-    width:${capW}px;
-    top:${r.y + r.h * pos/100}px;
-    font-size:${sz}px;
-    font-family:${getFont(false)};
-    font-style:${(state.italicOn||s.italic)?'italic':'normal'};
-    font-weight:${state.curWeight||'900'};
-    text-align:center;
-    max-width:${capW}px;
-  `;
+  // FIXED positioning: flex container already handles width via CSS (78%)
+  // We only set top + font-size dynamically
+  cap.style.top = (r.y + r.h * pos/100) + 'px';
+  cap.style.fontSize = sz + 'px';
+  cap.style.fontFamily = getFont(false);
+  cap.style.fontStyle = (state.italicOn||s.italic) ? 'italic' : 'normal';
+  cap.style.fontWeight = state.curWeight || '900';
 
   updateActiveLine(t);
   if (!state.showCap) { cap.innerHTML=''; capBg.style.display='none'; return; }
@@ -1021,7 +1016,8 @@ function render() {
   if (cap.dataset.key !== key) {
     cap.dataset.key = key;
     cap.dataset.ai = '-1';
-    cap.innerHTML = parts.map(w => `<span class="cw-el">${escHtml(up?String(w.t).toUpperCase():w.t)}</span>`).join(' ');
+    // flex-wrap will handle line breaks automatically
+    cap.innerHTML = parts.map(w => `<span class="cw-el">${escHtml(up?String(w.t).toUpperCase():w.t)}</span>`).join('');
     cap.classList.remove('ci'); void cap.offsetWidth; cap.classList.add('ci');
   }
 
@@ -1120,7 +1116,7 @@ async function transcribe(audio) {
     setAiStep(2); setProg(pf,70); setStatus(sL,'Detectando palavras…');
     state.rawWords = (res.chunks||[]).filter(c=>c.timestamp&&c.timestamp[0]!=null);
     setAiStep(3); setProg(pf,90); setStatus(sL,'Montando legendas…');
-    const maxW = Math.max(1, +$('maxWords').value||4);
+    const maxW = Math.max(1, +$('maxWords').value||3);
     state.chunks = groupWords(state.rawWords, res.text, maxW, 2.0);
     buildLines(); setProg(pf,100);
     $('waitBox').classList.add('hidden'); $('pvWrap').classList.remove('hidden');
@@ -1204,7 +1200,7 @@ function exportTxt() {
 
 function getProjectData() {
   return {
-    version:6, styleIndex:state.activeStyle, pos:$('pos').value, size:$('size').value,
+    version:7, styleIndex:state.activeStyle, pos:$('pos').value, size:$('size').value,
     c1:$('c1').value, c2:$('c2').value, font:state.curFont, hlFont:state.curHlFont,
     weight:state.curWeight, hlWeight:state.curHlWeight, upToggle:$('upTog').checked,
     strokeW:$('strokeW').value, bgColor:$('bgCol').value, bgOpacity:$('bgOp').value,
@@ -1344,7 +1340,7 @@ async function exportBurned() {
     const outW = Math.round(vw * scale);
     const outH = Math.round(vh * scale);
 
-    const sz = Math.max(22, Math.min(100, Math.round(+$('size').value*(outH/1080))));
+    const sz = Math.max(20, Math.min(90, Math.round(+$('size').value*(outH/1080))));
     const pos = +$('pos').value;
     const up = $('upTog').checked;
     const color=$('c1').value, hl=$('c2').value;
@@ -1392,20 +1388,21 @@ async function exportBurned() {
       ctx.clearRect(0,0,outW,outH);
       ctx.textBaseline='middle'; ctx.textAlign='left';
 
-      // FIXED: tighter max line to avoid edge cut
-      const space=sz*.26, maxLine=outW * 0.82;
+      // Same 78% width rule as preview
+      const space=sz*.26, maxLine=outW * 0.78;
       const toks=fr.words.map((w,idx)=>({ txt:up?String(w.t).toUpperCase():String(w.t), on:fr.active===idx }));
       const lines=[]; let cur=[],curW=0;
       for (const tk of toks){
         const fam=tk.on?hFam:mFam, fw=tk.on?(state.curHlWeight||'900'):(state.curWeight||'900');
-        const fSz=tk.on?sz*1.12:sz;
+        // Active word is larger (simulates Pop animation)
+        const fSz = tk.on ? sz * 1.18 : sz;
         ctx.font=`${(state.italicOn||s.italic||(tk.on&&s.italicHl))?'italic ':''}${fw} ${fSz}px ${fam}`;
         const tw=ctx.measureText(tk.txt).width+space;
         if(curW+tw>maxLine&&cur.length){lines.push({toks:cur,w:curW});cur=[];curW=0;}
         cur.push(tk); curW+=tw;
       }
       if(cur.length) lines.push({toks:cur,w:curW});
-      const lh=sz*1.20;
+      const lh=sz*1.22;
       let y=outH*(pos/100)-((lines.length-1)*lh)/2;
 
       if(s.bg&&!hlBg){
@@ -1424,7 +1421,7 @@ async function exportBurned() {
         for(const tk of ln.toks){
           const isOn=tk.on;
           const fam=isOn?hFam:mFam, fw=isOn?(state.curHlWeight||'900'):(state.curWeight||'900');
-          const fSz=isOn?sz*1.12:sz;
+          const fSz=isOn?sz*1.18:sz; // stronger highlight = closer to Pop
           ctx.font=`${(state.italicOn||s.italic||(isOn&&s.italicHl))?'italic ':''}${fw} ${fSz}px ${fam}`;
           const tw=ctx.measureText(tk.txt).width;
           const fillCol=isOn?hl:color;
@@ -1448,7 +1445,7 @@ async function exportBurned() {
             ctx.shadowOffsetY=Math.max(2,fSz*.06);
           } else { ctx.shadowBlur=0; ctx.shadowColor='transparent'; ctx.shadowOffsetY=0; }
           if(sw>0&&scol!=='transparent'){
-            ctx.lineWidth=sw*(isOn?1.05:1); ctx.strokeStyle=scol; ctx.lineJoin='round';
+            ctx.lineWidth=sw*(isOn?1.08:1); ctx.strokeStyle=scol; ctx.lineJoin='round';
             ctx.strokeText(tk.txt,x,y);
           }
           ctx.shadowColor='transparent'; ctx.shadowBlur=0; ctx.shadowOffsetY=0;
@@ -1665,7 +1662,7 @@ function initPreview() {
 
   $('regroupBtn').addEventListener('click', ()=>{
     if(!state.rawWords.length){setStatus(sL,'Sem dados palavra-a-palavra.','err');return;}
-    const maxW=Math.max(1,+$('maxWords').value||4);
+    const maxW=Math.max(1,+$('maxWords').value||3);
     state.chunks=groupWords(state.rawWords,'',maxW,2.0);
     buildLines(); schedRender(); setStatus(sL,'Reagrupado!','ok'); saveLocal();
   });
