@@ -267,6 +267,7 @@ img,video{max-width:100%;display:block}
 </style>
 </head>
 <body>
+
 <header class="hdr">
   <div class="logo">
     <span class="logo-icon">
@@ -538,18 +539,14 @@ img,video{max-width:100%;display:block}
 </footer>
 
 <script type="module">
+/* ─── IMPORTS ─── */
 import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.2';
 env.allowLocalModels = false;
 env.useBrowserCache = true;
 
-/* Projeto via URL: https://videocomlegenda.vercel.app/?project=UUID
-   Grátis, 100% local (localStorage). Cada ID isola o auto-save neste navegador. */
-const _params = new URLSearchParams(location.search);
-const PROJECT_ID = (_params.get('project') || _params.get('p') || '').trim().slice(0, 64);
-const LS_KEY = PROJECT_ID ? `legendar_proj_${PROJECT_ID}` : 'legendar_auto';
-
-const $ = id => document.getElementById(id);
-const $$ = s => [...document.querySelectorAll(s)];
+/* ─── UTILS ─── */
+const $  = id => document.getElementById(id);
+const $$ = s  => [...document.querySelectorAll(s)];
 const clamp = (n,a,b) => Math.max(a, Math.min(b, n));
 
 function hexRgba(hex, a) {
@@ -582,7 +579,7 @@ function parseTC(str) {
 function dlBlob(name, content, type='text/plain;charset=utf-8') {
   const blob = content instanceof Blob ? content : new Blob([content],{type});
   const url = URL.createObjectURL(blob);
-  const a = Object.assign(document.createElement('a'),{href:url,download:name});
+  const a = Object.assign(document.createElement('a'),{href:url,download:name,rel:'noopener'});
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(()=>URL.revokeObjectURL(url), 30000);
 }
@@ -594,50 +591,23 @@ function setStatus(el, msg, kind='') {
 function setProg(el, pct) { el.style.width = clamp(pct,0,100)+'%'; }
 function escHtml(t) { return String(t).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 
-function detectPerf() {
-  const cores = navigator.hardwareConcurrency || 4;
-  const mem = navigator.deviceMemory || 4;
-  const mobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-  const hasGPU = !!navigator.gpu;
-  let score = 0;
-  if (cores >= 8) score += 3; else if (cores >= 4) score += 2; else score += 1;
-  if (mem >= 8) score += 3; else if (mem >= 4) score += 2; else score += 1;
-  if (hasGPU) score += 2;
-  if (mobile) score -= 1;
-  if (score >= 7) return 'high';
-  if (score >= 4) return 'mid';
-  return 'low';
-}
-const PERF = detectPerf();
-const perfBadge = $('perfBadge');
-if (PERF === 'high') { perfBadge.textContent = 'Alto'; perfBadge.className = 'perf-badge perf-high'; }
-else if (PERF === 'mid') { perfBadge.textContent = 'Médio'; perfBadge.className = 'perf-badge perf-mid'; }
-else { perfBadge.textContent = 'Baixo'; perfBadge.className = 'perf-badge perf-low'; }
-
-if (PERF === 'low') {
-  $('modelSel').value = 'Xenova/whisper-tiny';
-  $('gpuChk').checked = false;
-  $('maxWords').value = 3;
-} else {
-  $('modelSel').value = 'Xenova/whisper-base';
-  $('maxWords').value = 3;
-}
-
+/* ─── FONT MAP ─── */
 const FONTS = {
-  inter: '"Inter",system-ui,sans-serif',
+  inter:      '"Inter",system-ui,sans-serif',
   montserrat: '"Montserrat",sans-serif',
-  barlow: '"Barlow",sans-serif',
-  poppins: '"Poppins",sans-serif',
-  oswald: '"Oswald",sans-serif',
-  bebas: '"Bebas Neue",sans-serif',
-  anton: '"Anton",sans-serif',
-  impact: '"Archivo Black",Impact,"Arial Black",sans-serif',
+  barlow:     '"Barlow",sans-serif',
+  poppins:    '"Poppins",sans-serif',
+  oswald:     '"Oswald",sans-serif',
+  bebas:      '"Bebas Neue",sans-serif',
+  anton:      '"Anton",sans-serif',
+  impact:     '"Archivo Black",Impact,"Arial Black",sans-serif',
 };
 
+/* ─── STYLES CATALOGUE ─── */
 const STYLES = [
   { n:'HORMOZI 1', cat:'padrao', css:{color:'#ffffff',hl:'#22e06b',strokeW:0,shadow:84,font:'montserrat',hlFont:'montserrat',up:true,weight:'900'} },
   { n:'HORMOZI 2', cat:'padrao', css:{color:'#ffffff',hl:'#f9ea03',strokeW:0,shadow:84,font:'montserrat',hlFont:'montserrat',up:true,weight:'900'} },
-  { n:'BEAST',     cat:'padrao', css:{color:'#f9ea03',hl:'#ffffff',stroke:'#000000',strokeW:5,shadow:45,font:'impact',hlFont:'impact',up:true,weight:'900'} },
+  { n:'BEAST',     cat:'padrao', css:{color:'#f9ea03',hl:'#ffffff',stroke:'#000000',strokeW:5,shadow:45,font:'impact',hlFont:'impact',up:true,weight:'900',glow:false} },
   { n:'Negativa',  cat:'padrao', css:{color:'#ffffff',hl:'#ffffff',bg:'#000000',stroke:'#000000',strokeW:4,shadow:30,font:'inter',hlFont:'inter',weight:'900'} },
   { n:'LEON',      cat:'padrao', css:{color:'#ffffff',hl:'#ffe600',bg:'#ff4a1c',stroke:'#000000',strokeW:4,shadow:40,font:'inter',hlFont:'inter',up:true,weight:'900'} },
   { n:'LAGUNA',    cat:'padrao', css:{color:'#ffffff',hl:'#00e0ff',stroke:'#000000',strokeW:5,shadow:50,font:'inter',hlFont:'inter',up:true,weight:'900'} },
@@ -661,132 +631,46 @@ const STYLES = [
   { n:'Podcast',   cat:'custom', css:{color:'#ffffff',hl:'#7cf6ff',stroke:'#000000',strokeW:4,shadow:45,font:'oswald',hlFont:'oswald',weight:'700'} },
   { n:'Retro',     cat:'custom', css:{color:'#ffe9c7',hl:'#ff5757',stroke:'#5b1f00',strokeW:5,shadow:45,font:'bebas',hlFont:'bebas',italic:true,weight:'400'} },
   { n:'Punch',     cat:'custom', css:{color:'#ffffff',hl:'#ffe600',bg:'#1a6dff',stroke:'#000000',strokeW:3,shadow:45,font:'anton',hlFont:'anton',up:true,weight:'400'} },
-  { n:'TikTok Classic', cat:'tiktok', css:{color:'#ffffff',hl:'#00f2ea',stroke:'#000000',strokeW:4,shadow:50,font:'montserrat',hlFont:'montserrat',up:true,weight:'900'} },
-  { n:'CapCut Pop', cat:'tiktok', css:{color:'#ffffff',hl:'#ff0050',stroke:'#000000',strokeW:5,shadow:55,font:'poppins',hlFont:'poppins',up:true,weight:'900'} },
-  { n:'MrBeast', cat:'tiktok', css:{color:'#ffffff',hl:'#00ff88',stroke:'#000000',strokeW:6,shadow:60,font:'impact',hlFont:'impact',up:true,weight:'900'} },
-  { n:'Yellow Fire', cat:'tiktok', css:{color:'#ffe600',hl:'#ffffff',stroke:'#000000',strokeW:5,shadow:50,font:'anton',hlFont:'anton',up:true,weight:'400'} },
-  { n:'Clean White', cat:'tiktok', css:{color:'#ffffff',hl:'#ffffff',stroke:'#000000',strokeW:3,shadow:40,font:'inter',hlFont:'inter',weight:'800'} },
-  { n:'Pink Viral', cat:'tiktok', css:{color:'#ffffff',hl:'#ff4d9a',stroke:'#000000',strokeW:4,shadow:45,font:'bebas',hlFont:'bebas',up:true,weight:'400'} },
-  { n:'Clipa Glow', cat:'tiktok', css:{color:'#ffffff',hl:'#67e8f9',strokeW:0,shadow:0,font:'montserrat',hlFont:'bebas',up:true,weight:'900',glow:true,glowColor:'#22d3ee'} },
-  { n:'Inter + Bebas', cat:'mixed', css:{color:'#ffffff',hl:'#22e06b',stroke:'#000000',strokeW:3,shadow:50,font:'inter',hlFont:'bebas',up:true,weight:'800',hlWeight:'400'} },
-  { n:'Mont + Anton', cat:'mixed', css:{color:'#ffffff',hl:'#f9ea03',stroke:'#000000',strokeW:4,shadow:55,font:'montserrat',hlFont:'anton',up:true,weight:'900',hlWeight:'400'} },
-  { n:'Pop + Impact', cat:'mixed', css:{color:'#ffffff',hl:'#ff0050',stroke:'#000000',strokeW:5,shadow:50,font:'poppins',hlFont:'impact',up:true,weight:'800',hlWeight:'900'} },
-  { n:'Barlow + Bebas', cat:'mixed', css:{color:'#e2e8f0',hl:'#38bdf8',stroke:'#000000',strokeW:3,shadow:45,font:'barlow',hlFont:'bebas',up:true,weight:'700',hlWeight:'400'} },
-  { n:'Oswald + Anton', cat:'mixed', css:{color:'#ffffff',hl:'#fb923c',stroke:'#000000',strokeW:4,shadow:50,font:'oswald',hlFont:'anton',up:true,weight:'700',hlWeight:'400'} },
-  { n:'Inter + Anton', cat:'mixed', css:{color:'#ffffff',hl:'#a78bfa',stroke:'#000000',strokeW:3,shadow:55,font:'inter',hlFont:'anton',up:true,weight:'800',hlWeight:'400'} },
-  { n:'Mont + Bebas', cat:'mixed', css:{color:'#ffffff',hl:'#f472b6',stroke:'#000000',strokeW:4,shadow:50,font:'montserrat',hlFont:'bebas',up:true,weight:'900',hlWeight:'400'} },
-  { n:'Pop + Oswald', cat:'mixed', css:{color:'#ffffff',hl:'#4ade80',stroke:'#000000',strokeW:3,shadow:45,font:'poppins',hlFont:'oswald',up:true,weight:'800',hlWeight:'700'} },
-
-  /* ── tscaps = prints (fontes já no <link> Google Fonts) ── */
-  /* fullBg:true = fundo na faixa inteira | hlBg:true = caixa só na palavra ativa */
-
-  /* Print 1 · itálico creme */
-  { n:'MIRA', cat:'tscaps', css:{
-    color:'#f3eee6', hl:'#ffffff', strokeW:0, shadow:38,
-    font:'poppins', hlFont:'poppins', italic:true, weight:'600', hlWeight:'700'
-  }},
-
-  /* Print 2 · ouro metálico */
-  { n:'GOLD', cat:'tscaps', css:{
-    color:'#e8c547', hl:'#fff0a0', stroke:'#4a3208', strokeW:4, shadow:60,
-    font:'anton', hlFont:'anton', up:true, weight:'400',
-    glow:true, glowColor:'#f0c040'
-  }},
-
-  /* Print 3–4 · branco limpo bold */
-  { n:'CLEAN', cat:'tscaps', css:{
-    color:'#ffffff', hl:'#ffffff', stroke:'#000000', strokeW:2, shadow:42,
-    font:'montserrat', hlFont:'montserrat', up:true, weight:'900'
-  }},
-
-  /* Print 6 + 11 · viral amarelo + contorno preto */
-  { n:'LOKI', cat:'tscaps', css:{
-    color:'#ffffff', hl:'#ffe600', stroke:'#000000', strokeW:7, shadow:48,
-    font:'impact', hlFont:'impact', up:true, weight:'900'
-  }},
-
-  /* Print 7 · caixa vermelha SÓ na palavra */
-  { n:'LEVI', cat:'tscaps', css:{
-    color:'#ffffff', hl:'#ffffff', bg:'#e11d48', hlBg:true,
-    stroke:'#000000', strokeW:2, shadow:36,
-    font:'montserrat', hlFont:'montserrat', up:true, weight:'900'
-  }},
-
-  /* Print 10 · branco + ciano */
-  { n:'ENZO', cat:'tscaps', css:{
-    color:'#ffffff', hl:'#2dd4bf', stroke:'#000000', strokeW:5, shadow:48,
-    font:'montserrat', hlFont:'montserrat', up:true, weight:'900'
-  }},
-
-  /* Print 13 · barra preta na faixa inteira + vila amarelo */
-  { n:'BAR', cat:'tscaps', css:{
-    color:'#ffffff', hl:'#facc15', bg:'#0a0a0a', fullBg:true,
-    strokeW:0, shadow:18,
-    font:'inter', hlFont:'inter', weight:'700', hlWeight:'900'
-  }},
-
-  /* Print 8 · verde */
-  { n:'MILO', cat:'tscaps', css:{
-    color:'#4ade80', hl:'#86efac', strokeW:0, shadow:32,
-    font:'poppins', hlFont:'poppins', weight:'800'
-  }},
-
-  /* Print 5 · roxo */
-  { n:'LYRA', cat:'tscaps', css:{
-    color:'#f8fafc', hl:'#a78bfa', strokeW:0, shadow:28,
-    font:'poppins', hlFont:'bebas', weight:'600', hlWeight:'400',
-    glow:true, glowColor:'#8b5cf6'
-  }},
-
-  /* Print 14 · creme literário */
-  { n:'PASTOR', cat:'tscaps', css:{
-    color:'#efe6d5', hl:'#fff9f0', strokeW:0, shadow:30,
-    font:'poppins', hlFont:'poppins', italic:true, weight:'500'
-  }},
-
-  /* Print 9 + 12 · outline forte */
-  { n:'BEAST', cat:'tscaps', css:{
-    color:'#ffffff', hl:'#fde047', stroke:'#000000', strokeW:8, shadow:52,
-    font:'impact', hlFont:'impact', up:true, weight:'900'
-  }},
-
-  /* Lena · bolha azul na palavra */
-  { n:'LENA', cat:'tscaps', css:{
-    color:'#ffffff', hl:'#ffffff', bg:'#2997ff', hlBg:true,
-    strokeW:0, shadow:18,
-    font:'inter', hlFont:'inter', weight:'700', hlWeight:'900'
-  }},
-
-  /* Nyx · terminal fundo inteiro */
-  { n:'NYX', cat:'tscaps', css:{
-    color:'#00ff41', hl:'#39ff14', bg:'#0d1117', fullBg:true,
-    strokeW:0, shadow:0,
-    font:'inter', hlFont:'inter', weight:'500', glow:true, glowColor:'#00ff41'
-  }},
-
-  /* Elio · laranja */
-  { n:'ELIO', cat:'tscaps', css:{
-    color:'#ffffff', hl:'#ff6b35', stroke:'#000000', strokeW:5, shadow:48,
-    font:'poppins', hlFont:'poppins', up:true, weight:'800'
-  }},
 ];
 
+/* ─── APP STATE ─── */
 const state = {
-  chunks: [], rawWords: [], transcriber: null,
-  activeStyle: 0, activeFilter: 'all', activeLineIdx: -1,
-  showCap: true, realcar: true, italicOn: false, ftab: 'main',
-  curFont: 'montserrat', curHlFont: 'montserrat',
-  curWeight: '900', curHlWeight: '900',
-  anim: 'pop',
-  burning: false, cancelReq: false,
-  ffmpeg: null, ffFetch: null, ffLoading: null,
-  srcFile: null, srcUrl: null, pendingProj: null,
-  animRaf: 0, playRaf: 0,
+  chunks: [],
+  rawWords: [],
+  transcriber: null,
+  activeStyle: 0,
+  activeFilter: 'all',
+  activeLineIdx: -1,
+  showCap: true,
+  realcar: true,
+  italicOn: false,
+  ftab: 'main',
+  curFont: 'montserrat',
+  curHlFont: 'montserrat',
+  curWeight: '900',
+  curHlWeight: '900',
+  burning: false,
+  cancelReq: false,
+  ffmpeg: null,
+  ffFetch: null,
+  ffLoading: null,
+  srcFile: null,
+  srcUrl: null,
+  pendingProj: null,
+  animRaf: 0,
+  playRaf: 0,
 };
 
-const vid = $('vid'), cap = $('cap'), capBg = $('capBg');
-const sL = $('sL'), s0 = $('s0'), pf = $('pf'), pf0 = $('pf0');
+/* ─── ELEMENT REFS ─── */
+const vid    = $('vid');
+const cap    = $('cap');
+const capBg  = $('capBg');
+const sL     = $('sL');
+const s0     = $('s0');
+const pf     = $('pf');
+const pf0    = $('pf0');
 
+/* ─── WORD HELPERS ─── */
 function wordsFromChunk(c) {
   const arr = String(c.text||'').trim().split(/\s+/).filter(Boolean);
   if (!arr.length) return null;
@@ -796,11 +680,12 @@ function wordsFromChunk(c) {
 }
 
 function groupWords(words, fallbackText, maxW, maxDur) {
-  maxW = Math.max(1, Math.min(6, maxW||3));
+  maxW = Math.max(1, maxW||5);
   if (!words.length) {
     if (!String(fallbackText||'').trim()) return [];
     return [{ start:0, end:5, text:String(fallbackText).trim(), words:null }];
   }
+  // Check if word-level timestamps (chunks from whisper word-level)
   const hasWordLevel = words[0] && Array.isArray(words[0].timestamp) && words[0].timestamp[0] != null;
   if (!hasWordLevel) {
     return words.map(w => ({
@@ -849,6 +734,7 @@ function parseSubs(text, isVtt) {
   }, []);
 }
 
+/* ─── STYLE CHIP RENDERING ─── */
 function buildShadowCSS(css) {
   if (css.glow) {
     const gc = css.glowColor||css.hl||css.color||'#fff';
@@ -867,21 +753,21 @@ function renderStyleGrid() {
   box.innerHTML = '';
   STYLES.forEach((s,i) => {
     if (state.activeFilter==='padrao' && s.cat!=='padrao') return;
-    if (state.activeFilter==='tiktok' && s.cat!=='tiktok') return;
-    if (state.activeFilter==='mixed' && s.cat!=='mixed') return;
-    if (state.activeFilter==='tscaps' && s.cat!=='tscaps') return;
     if (state.activeFilter==='custom' && s.cat!=='custom') return;
     const chip = document.createElement('div');
     chip.className = 'schip' + (i===state.activeStyle ? ' on' : '');
     chip.dataset.idx = String(i);
+    chip.setAttribute('role','option');
+    chip.setAttribute('aria-selected', i===state.activeStyle ? 'true' : 'false');
+    chip.tabIndex = 0;
     const inner = document.createElement('div');
     inner.className = 'ci';
-    const toks = String(s.n).trim().split(/\s+/).slice(0,3);
+    const toks = String(s.n).trim().split(/\s+/);
     const fam = FONTS[s.css.font]||FONTS.inter;
     const shadow = buildShadowCSS(s.css);
     const up = !!s.css.up, italic = !!s.css.italic;
     const stroke = s.css.stroke && s.css.stroke!=='transparent' ? s.css.stroke : 'transparent';
-    const sw = Math.min(2.2, (s.css.strokeW||0)/3.5);
+    const sw = Math.min(2.5, (s.css.strokeW||0)/3.5);
     toks.forEach((tok,ti) => {
       const isHl = ti===toks.length-1 && toks.length>1;
       const sp = document.createElement('span');
@@ -889,59 +775,64 @@ function renderStyleGrid() {
       sp.textContent = up ? tok.toUpperCase() : tok;
       const col = isHl ? (s.css.hl||s.css.color) : s.css.color;
       const bg  = (isHl && s.css.bg) ? s.css.bg : ((!isHl && s.css.bg && toks.length===1) ? s.css.bg : 'transparent');
-      const useFam = isHl ? (FONTS[s.css.hlFont]||fam) : fam;
       Object.assign(sp.style, {
-        color: col, fontFamily: useFam, fontWeight: isHl ? (s.css.hlWeight||s.css.weight||'900') : (s.css.weight||'900'),
+        color: col, fontFamily: fam, fontWeight: s.css.weight||'900',
         fontStyle: italic ? 'italic' : 'normal',
-        fontSize: toks.length>1 ? '10.5px' : '11.5px',
+        fontSize: toks.length>1 ? '11.5px' : '12.5px',
         textTransform: up ? 'uppercase' : 'none',
         textShadow: shadow,
         WebkitTextStroke: stroke!=='transparent' ? `${sw}px ${stroke}` : '',
         paintOrder: 'stroke fill',
         background: bg!=='transparent' ? bg : 'transparent',
-        padding: bg!=='transparent' ? '2px 4px' : '0',
-        borderRadius: bg!=='transparent' ? '3px' : '0',
+        padding: bg!=='transparent' ? '2px 5px' : '0',
+        borderRadius: bg!=='transparent' ? '4px' : '0',
         display: 'inline-block',
       });
       inner.appendChild(sp);
       if (ti < toks.length-1) {
-        const g = document.createElement('span'); g.textContent=' '; g.style.fontSize='9px'; inner.appendChild(g);
+        const g = document.createElement('span'); g.textContent=' '; g.style.fontSize='11px'; inner.appendChild(g);
       }
     });
     chip.appendChild(inner);
-    chip.addEventListener('click', () => applyStyle(i));
+    const applyFn = () => applyStyle(i);
+    chip.addEventListener('click', applyFn);
+    chip.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); applyFn(); } });
     box.appendChild(chip);
   });
 }
 
+/* ─── APPLY STYLE ─── */
 function applyStyle(i) {
   state.activeStyle = i;
   const s = STYLES[i]?.css||{};
   renderStyleGrid();
   const c1 = (s.color||'#ffffff').startsWith('#') ? s.color : '#ffffff';
-  $('c1').value = c1; $('c1D').value = c1;
-  $('c2').value = s.hl||'#22e06b';
-  state.curFont = s.font||'inter';
-  state.curHlFont = s.hlFont||s.font||'inter';
-  state.curWeight = s.weight||'900';
-  state.curHlWeight = s.hlWeight||s.weight||'900';
-  $('fontSel').value = state.ftab==='hl' ? state.curHlFont : state.curFont;
-  $('fontWt').value = state.ftab==='hl' ? state.curHlWeight : state.curWeight;
-  $('upTog').checked = !!s.up;
+  $('c1').value  = c1;
+  $('c1D').value = c1;
+  $('c2').value  = s.hl||'#22e06b';
+  state.curFont    = s.font||'inter';
+  state.curHlFont  = s.hlFont||s.font||'inter';
+  state.curWeight  = s.weight||'900';
+  state.curHlWeight= s.hlWeight||s.weight||'900';
+  $('fontSel').value  = state.ftab==='hl' ? state.curHlFont : state.curFont;
+  $('fontWt').value   = state.ftab==='hl' ? state.curHlWeight : state.curWeight;
+  $('upTog').checked  = !!s.up;
   state.italicOn = !!(s.italic||s.italicHl);
-  $('strokeW').value = s.strokeW||0; $('strokeWv').textContent = (s.strokeW||0)+' px';
+  $('strokeW').value   = s.strokeW||0;
+  $('strokeWv').textContent = (s.strokeW||0)+' px';
   $('strokeCol').value = (s.stroke && s.stroke!=='transparent') ? s.stroke : '#000000';
-  $('shadowAmt').value = s.shadow||55; $('shadowAmtv').textContent = (s.shadow||55)+'%';
+  $('shadowAmt').value = s.shadow||55;
+  $('shadowAmtv').textContent = (s.shadow||55)+'%';
   $('shadowCol').value = '#000000';
-  $('sizeD').value = $('size').value; $('sizeDv').textContent = $('size').value+' px';
-  $('posD').value = $('pos').value; $('posDv').textContent = $('pos').value+'%';
+  $('sizeD').value = $('size').value;
+  $('sizeDv').textContent = $('size').value+' px';
+  $('posD').value = $('pos').value;
+  $('posDv').textContent = $('pos').value+'%';
   $('sepName').textContent = STYLES[i].n;
-  // hlBg = caixa só na palavra | fullBg = faixa inteira | se só bg sem flag → hlBg
-  const wantWordBg = !!(s.hlBg || (s.bg && !s.fullBg));
-  const wantFullBg = !!(s.fullBg && s.bg);
-  $$('.hlbg-btn').forEach(b=>b.classList.toggle('on', (b.dataset.v==='on')===wantWordBg));
-  $('hlbgOpts').classList.toggle('hidden', !wantWordBg);
-  if ((wantWordBg||wantFullBg) && (s.bg||'').startsWith('#')) $('bgCol').value = s.bg;
+  const hasBg = !!s.bg;
+  $$('.hlbg-btn').forEach(b=>b.classList.toggle('on', (b.dataset.v==='on')===hasBg));
+  $('hlbgOpts').classList.toggle('hidden', !hasBg);
+  if (hasBg && (s.bg||'').startsWith('#')) $('bgCol').value = s.bg;
   syncStyleBtns();
   schedRender();
 }
@@ -955,23 +846,14 @@ function syncStyleBtns() {
 
 function isHlBgOn() {
   const b = document.querySelector('.hlbg-btn.on');
-  if (b) return b.dataset.v==='on';
-  const s = STYLES[state.activeStyle]?.css||{};
-  return !!(s.hlBg || (s.bg && !s.fullBg));
+  return b ? b.dataset.v==='on' : !!(STYLES[state.activeStyle]?.css?.bg);
 }
 
 function getFont(hl=false) {
   return FONTS[hl ? state.curHlFont : state.curFont]||FONTS.inter;
 }
 
-function setAnim(name) {
-  state.anim = name;
-  ['pop','bounce','scale','fade','slide'].forEach(a => {
-    cap.classList.toggle('anim-'+a, a===name);
-  });
-  $$('.anim-btn').forEach(b => b.classList.toggle('on', b.dataset.anim===name));
-}
-
+/* ─── LINES / SUBTITLE LIST ─── */
 function buildLines() {
   const box = $('lwrap'); if (!box) return;
   box.innerHTML = '';
@@ -987,6 +869,7 @@ function buildLines() {
     }
     const row = document.createElement('div');
     row.className = 'line'; row.dataset.idx = String(i);
+    // Timestamp
     const ts = document.createElement('div');
     ts.className = 'lts';
     ts.textContent = fmtShort(c.start)+' – '+fmtShort(c.end);
@@ -996,10 +879,11 @@ function buildLines() {
       const ne = prompt('Fim (mm:ss.ss)', fmtShort(c.end));
       if (ns!=null) { const v=parseTC(ns); if(!isNaN(v)&&v>=0) c.start=v; }
       if (ne!=null) { const v=parseTC(ne); if(!isNaN(v)&&v>c.start) c.end=v; }
-      buildLines(); schedRender(); saveLocal();
+      buildLines(); schedRender();
     });
+    // Words
     const body = document.createElement('div'); body.className='lbody';
-    const ww = document.createElement('div'); ww.className='lwords';
+    const ww   = document.createElement('div'); ww.className='lwords';
     const words = c.words?.length ? c.words : (wordsFromChunk(c)||[{t:c.text,s:c.start,e:c.end}]);
     if (!c.words?.length) c.words = words;
     words.forEach(w => {
@@ -1009,12 +893,13 @@ function buildLines() {
       sp.addEventListener('input', () => {
         w.t = sp.textContent.trim()||w.t;
         c.text = words.map(x=>x.t).join(' ');
-        schedRender(); saveLocal();
+        schedRender();
       });
       sp.addEventListener('keydown', e=>{ if(e.key==='Enter'){e.preventDefault();sp.blur();} });
       ww.appendChild(sp);
     });
     body.appendChild(ww);
+    // Actions
     const acts = document.createElement('div'); acts.className='lacts';
     acts.append(
       mkAct('✂','Dividir',  ()=>splitLine(i)),
@@ -1039,11 +924,11 @@ function splitLine(i) {
   const mid=Math.ceil(ws.length/2), a=ws.slice(0,mid), b=ws.slice(mid);
   const makeC = arr => ({ start:arr[0].s, end:arr[arr.length-1].e, text:arr.map(w=>w.t).join(' '), words:arr });
   state.chunks.splice(i,1, makeC(a), makeC(b));
-  buildLines(); schedRender(); saveLocal();
+  buildLines(); schedRender();
 }
 function delLine(i) {
   if (!confirm('Apagar esta linha?')) return;
-  state.chunks.splice(i,1); buildLines(); schedRender(); saveLocal();
+  state.chunks.splice(i,1); buildLines(); schedRender();
 }
 function addAfter(i) {
   const prev = state.chunks[i], next = state.chunks[i+1];
@@ -1051,9 +936,10 @@ function addAfter(i) {
   const end   = next ? Math.min(next.start-.05, start+1.5) : start+1.5;
   const nc = { start, end:Math.max(end,start+.3), text:'nova legenda', words:null };
   nc.words = wordsFromChunk(nc);
-  state.chunks.splice(i+1,0,nc); buildLines(); schedRender(); saveLocal();
+  state.chunks.splice(i+1,0,nc); buildLines(); schedRender();
 }
 
+/* ─── RENDER ENGINE ─── */
 function videoRect() {
   const st = $('stage').getBoundingClientRect();
   const vr = vid.getBoundingClientRect();
@@ -1081,16 +967,10 @@ function render() {
   const s = STYLES[state.activeStyle]?.css; if (!s) return;
   const r = videoRect();
   const rawSz = +$('size').value;
-  const sz = Math.max(16, rawSz * (r.h/1080) || rawSz);
-  const pos = +$('pos').value;
+  const sz    = rawSz * (r.h/1080)||rawSz;
+  const pos   = +$('pos').value;
 
-  // FIXED positioning: flex container already handles width via CSS (78%)
-  // We only set top + font-size dynamically
-  cap.style.top = (r.y + r.h * pos/100) + 'px';
-  cap.style.fontSize = sz + 'px';
-  cap.style.fontFamily = getFont(false);
-  cap.style.fontStyle = (state.italicOn||s.italic) ? 'italic' : 'normal';
-  cap.style.fontWeight = state.curWeight || '900';
+  cap.style.cssText = `left:${r.x+r.w*.06}px;width:${r.w*.88}px;top:${r.y+r.h*pos/100}px;font-size:${sz}px;font-family:${getFont(false)};font-style:${(state.italicOn||s.italic)?'italic':'normal'};font-weight:${state.curWeight||'900'};text-align:center`;
 
   updateActiveLine(t);
   if (!state.showCap) { cap.innerHTML=''; capBg.style.display='none'; return; }
@@ -1098,13 +978,19 @@ function render() {
   const c = state.chunks.find(x => t>=x.start && t<=x.end);
   if (!c) { cap.innerHTML=''; capBg.style.display='none'; return; }
 
-  const color = $('c1').value, hl = $('c2').value, up = $('upTog').checked;
-  const sw = +$('strokeW').value, scol = $('strokeCol').value||'#000';
-  const shAmt = +$('shadowAmt').value, shCol = $('shadowCol').value||'#000000';
-  const hlBg = isHlBgOn(), bgCol = hlBg ? ($('bgCol').value||s.bg||'#000') : null;
-  const bgOp = hlBg ? (+$('bgOp').value||85)/100 : 0;
-  const bgRad = +$('bgRad').value||8;
+  const color  = $('c1').value;
+  const hl     = $('c2').value;
+  const up     = $('upTog').checked;
+  const sw     = +$('strokeW').value;
+  const scol   = $('strokeCol').value||'#000';
+  const shAmt  = +$('shadowAmt').value;
+  const shCol  = $('shadowCol').value||'#000000';
+  const hlBg   = isHlBgOn();
+  const bgCol  = hlBg ? ($('bgCol').value||s.bg||'#000') : null;
+  const bgOp   = hlBg ? (+$('bgOp').value||85)/100 : 0;
+  const bgRad  = +$('bgRad').value||8;
 
+  // Text shadow
   let textShadow = 'none';
   if (s.glow) {
     const gc = s.glowColor||hl;
@@ -1130,9 +1016,8 @@ function render() {
 
   if (cap.dataset.key !== key) {
     cap.dataset.key = key;
-    cap.dataset.ai = '-1';
-    // flex-wrap will handle line breaks automatically
-    cap.innerHTML = parts.map(w => `<span class="cw-el">${escHtml(up?String(w.t).toUpperCase():w.t)}</span>`).join('');
+    cap.dataset.ai  = '-1';
+    cap.innerHTML = parts.map(w => `<span class="cw-el">${escHtml(up?String(w.t).toUpperCase():w.t)}</span>`).join(' ');
     cap.classList.remove('ci'); void cap.offsetWidth; cap.classList.add('ci');
   }
 
@@ -1146,15 +1031,15 @@ function render() {
     const txt= up ? String(w.t).toUpperCase() : String(w.t);
     if (el.textContent!==txt) el.textContent=txt;
     const wordBg = (hlBg&&on) ? hexRgba(bgCol||hl,Math.max(.8,bgOp)) : (s.bg&&!hlBg ? s.bg : 'transparent');
-    el.style.color = on ? hl : color;
-    el.style.fontFamily = on ? getFont(true) : getFont(false);
-    el.style.fontWeight = on ? (state.curHlWeight||'900') : (state.curWeight||'900');
-    el.style.textShadow = textShadow;
+    el.style.color        = on ? hl : color;
+    el.style.fontFamily   = on ? getFont(true) : getFont(false);
+    el.style.fontWeight   = on ? (state.curHlWeight||'900') : (state.curWeight||'900');
+    el.style.textShadow   = textShadow;
     el.style.webkitTextStroke = wstroke;
-    el.style.paintOrder = 'stroke fill';
-    el.style.background = wordBg;
+    el.style.paintOrder   = 'stroke fill';
+    el.style.background   = wordBg;
     el.style.borderRadius = (hlBg&&on) ? bgRad+'px' : (s.bg?'4px':'0');
-    el.style.fontStyle = (state.italicOn||s.italic||(on&&s.italicHl)) ? 'italic' : 'normal';
+    el.style.fontStyle    = (state.italicOn||s.italic||(on&&s.italicHl)) ? 'italic' : 'normal';
     el.classList.toggle('on', on);
     if (on && changed) { el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
     if (!on) el.classList.remove('pop');
@@ -1162,7 +1047,7 @@ function render() {
 
   if (s.bg && !hlBg) {
     requestAnimationFrame(() => {
-      const cr=cap.getBoundingClientRect(), stR=$('stage').getBoundingClientRect(), pad=8;
+      const cr=cap.getBoundingClientRect(), stR=$('stage').getBoundingClientRect(), pad=10;
       capBg.style.cssText=`display:block;left:${cr.left-stR.left-pad}px;top:${cr.top-stR.top-pad}px;width:${cr.width+pad*2}px;height:${cr.height+pad*2}px;background:${s.bg};border-radius:4px`;
     });
   } else { capBg.style.display='none'; }
@@ -1186,6 +1071,7 @@ function updateActiveLine(t) {
   }
 }
 
+/* ─── TRANSCRIPTION ─── */
 function setAiStep(n) {
   $$('#aiSteps .ai-step').forEach(s => {
     const sn = +s.dataset.s;
@@ -1195,9 +1081,9 @@ function setAiStep(n) {
 }
 
 async function transcribe(audio) {
-  const model = $('modelSel').value;
-  const lang = $('langSel').value;
-  const useGPU = $('gpuChk').checked && !!navigator.gpu && PERF !== 'low';
+  const model  = $('modelSel').value;
+  const lang   = $('langSel').value;
+  const useGPU = $('gpuChk').checked && !!navigator.gpu;
   setStatus(sL,'Carregando modelo IA…'); setBusy(true); setProg(pf,0); setAiStep(1);
   try {
     if (!state.transcriber || state.transcriber._model!==model || state.transcriber._gpu!==useGPU) {
@@ -1228,29 +1114,29 @@ async function transcribe(audio) {
     try { res = await state.transcriber(audio, tOpts); }
     catch(_) { tOpts.return_timestamps=true; res = await state.transcriber(audio, tOpts); }
 
-    setAiStep(2); setProg(pf,70); setStatus(sL,'Detectando palavras…');
+    setAiStep(2); setProg(pf,70); setStatus(sL,'Detectando palavras-chave…');
     state.rawWords = (res.chunks||[]).filter(c=>c.timestamp&&c.timestamp[0]!=null);
     setAiStep(3); setProg(pf,90); setStatus(sL,'Montando legendas…');
-    const maxW = Math.max(1, +$('maxWords').value||3);
-    state.chunks = groupWords(state.rawWords, res.text, maxW, 2.0);
+    const maxW = Math.max(1, +$('maxWords').value||5);
+    state.chunks = groupWords(state.rawWords, res.text, maxW, 2.2);
     buildLines(); setProg(pf,100);
     $('waitBox').classList.add('hidden'); $('pvWrap').classList.remove('hidden');
     schedRender(); setStatus(sL,'✅ Pronto! Escolha um estilo.','ok');
-    saveLocal();
   } catch(err) {
     console.error(err);
     setStatus(sL, 'Erro na transcrição: '+err.message, 'err');
   } finally { setBusy(false); }
 }
 
+/* ─── FILE HANDLING ─── */
 async function handleFile(f) {
   if (!f || !f.size) { setStatus(s0,'Arquivo inválido.','err'); return; }
   const ok = /^(video|audio)\//.test(f.type) || /\.(mp4|mov|webm|mkv|mp3|wav|m4a|ogg|aac)$/i.test(f.name);
-  if (!ok) { setStatus(s0,'Formato não suportado.','err'); return; }
+  if (!ok) { setStatus(s0,'Formato não suportado. Use MP4, MOV, WebM, MP3 ou WAV.','err'); return; }
   setStatus(s0,'Decodificando áudio…');
   if (state.srcUrl) { URL.revokeObjectURL(state.srcUrl); state.srcUrl=null; }
   state.srcFile = f;
-  state.srcUrl = URL.createObjectURL(f);
+  state.srcUrl  = URL.createObjectURL(f);
   vid.src = state.srcUrl; vid.load();
 
   try {
@@ -1284,7 +1170,6 @@ function showEditor() {
   $('upSection').classList.add('hidden');
   $('editor').classList.remove('hidden');
   $('mob').style.display='flex';
-  $('wm').classList.toggle('show', $('wmChk').checked);
 }
 
 async function handleSubFile(sf) {
@@ -1296,16 +1181,16 @@ async function handleSubFile(sf) {
     buildLines();
     $('waitBox').classList.add('hidden'); $('pvWrap').classList.remove('hidden');
     schedRender(); setStatus(sL,'Legenda importada!','ok');
-    saveLocal();
   } catch(err) { setStatus(sL,'Erro ao ler legenda: '+err.message,'err'); }
 }
 
+/* ─── EXPORT ─── */
 function exportSrt() {
-  if (!state.chunks.length) return setStatus(sL,'Sem legendas.','err');
+  if (!state.chunks.length) return setStatus(sL,'Sem legendas para exportar.','err');
   dlBlob('legenda.srt', state.chunks.map((c,i)=>`${i+1}\n${fmtTC(c.start)} --> ${fmtTC(c.end)}\n${c.text.trim()}\n`).join('\n'));
 }
 function exportVtt() {
-  if (!state.chunks.length) return setStatus(sL,'Sem legendas.','err');
+  if (!state.chunks.length) return setStatus(sL,'Sem legendas para exportar.','err');
   dlBlob('legenda.vtt', 'WEBVTT\n\n'+state.chunks.map(c=>`${fmtTC(c.start,'.')} --> ${fmtTC(c.end,'.')}\n${c.text.trim()}\n`).join('\n'));
 }
 function exportTxt() {
@@ -1315,34 +1200,31 @@ function exportTxt() {
 
 function getProjectData() {
   return {
-    version:7, styleIndex:state.activeStyle, pos:$('pos').value, size:$('size').value,
+    version:4, styleIndex:state.activeStyle, pos:$('pos').value, size:$('size').value,
     c1:$('c1').value, c2:$('c2').value, font:state.curFont, hlFont:state.curHlFont,
     weight:state.curWeight, hlWeight:state.curHlWeight, upToggle:$('upTog').checked,
     strokeW:$('strokeW').value, bgColor:$('bgCol').value, bgOpacity:$('bgOp').value,
-    bgRadius:$('bgRad').value, shadowAmt:$('shadowAmt').value, maxWords:$('maxWords').value,
-    anim: state.anim, chunks: state.chunks
+    bgRadius:$('bgRad').value, shadowAmt:$('shadowAmt').value,
+    chunks: state.chunks
   };
 }
 function saveProject() {
-  if (!state.chunks.length) return setStatus(sL,'Sem legendas.','err');
+  if (!state.chunks.length) return setStatus(sL,'Sem legendas para salvar.','err');
   dlBlob('projeto.json', JSON.stringify(getProjectData(),null,2), 'application/json');
-}
-function saveLocal() {
-  try { localStorage.setItem(LS_KEY, JSON.stringify(getProjectData())); } catch(_){}
 }
 async function loadProject(f) {
   try {
     const data = JSON.parse(await f.text());
-    if (!Array.isArray(data.chunks)) throw new Error('Arquivo inválido.');
+    if (!Array.isArray(data.chunks)) throw new Error('Arquivo de projeto inválido.');
     if ($('editor').classList.contains('hidden')) {
       state.pendingProj = data;
-      setStatus(s0,'Projeto lido! Selecione o vídeo.');
+      setStatus(s0,'Projeto lido! Selecione o vídeo correspondente.');
       $('fileInput').click();
     } else {
       applyProjData(data);
       setStatus(sL,'Projeto carregado!','ok');
     }
-  } catch(err) { setStatus(s0,'Erro: '+err.message,'err'); }
+  } catch(err) { setStatus(s0,'Erro ao carregar projeto: '+err.message,'err'); }
 }
 function applyProjData(data) {
   state.chunks = data.chunks||[];
@@ -1353,24 +1235,22 @@ function applyProjData(data) {
   if (data.bgOpacity) $('bgOp').value=data.bgOpacity;
   if (data.bgRadius) $('bgRad').value=data.bgRadius;
   if (data.shadowAmt) $('shadowAmt').value=data.shadowAmt;
-  if (data.maxWords) $('maxWords').value=data.maxWords;
-  if (data.font) state.curFont=data.font;
-  if (data.hlFont) state.curHlFont=data.hlFont;
-  if (data.weight) state.curWeight=data.weight;
+  if (data.font)     state.curFont=data.font;
+  if (data.hlFont)   state.curHlFont=data.hlFont;
+  if (data.weight)   state.curWeight=data.weight;
   if (data.hlWeight) state.curHlWeight=data.hlWeight;
   if (data.upToggle!=null) $('upTog').checked=data.upToggle;
-  if (data.anim) setAnim(data.anim);
   syncAllLabels(); buildLines(); schedRender();
 }
 
 function syncAllLabels() {
-  $('posv').textContent = $('pos').value+'%';
-  $('sizev').textContent = $('size').value+'px';
+  $('posv').textContent   = $('pos').value+'%';
+  $('sizev').textContent  = $('size').value+'px';
   $('sizeDv').textContent = $('size').value+' px';
-  $('posDv').textContent = $('pos').value+'%';
-  $('strokeWv').textContent = $('strokeW').value+' px';
-  $('shadowAmtv').textContent = $('shadowAmt').value+'%';
-  $('bgOpv').textContent = $('bgOp').value+'%';
+  $('posDv').textContent  = $('pos').value+'%';
+  $('strokeWv').textContent  = $('strokeW').value+' px';
+  $('shadowAmtv').textContent= $('shadowAmt').value+'%';
+  $('bgOpv').textContent  = $('bgOp').value+'%';
   $('bgRadv').textContent = $('bgRad').value+'px';
   $('maxWordsv').textContent = $('maxWords').value;
 }
@@ -1384,16 +1264,16 @@ function setBusy(b) {
 function onReset() {
   if ((state.chunks.length||state.burning) && !confirm('Descartar e começar de novo?')) return;
   if (state.srcUrl) URL.revokeObjectURL(state.srcUrl);
-  try { localStorage.removeItem(LS_KEY); } catch(_){}
   location.reload();
 }
 
+/* ─── FFMPEG BURN ─── */
 const FFCDN = 'https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js';
 function loadScript(src) {
   return new Promise((res,rej)=>{
     if ([...document.scripts].some(s=>s.src===src)){res();return;}
     const s=document.createElement('script');s.src=src;
-    s.onload=res; s.onerror=()=>rej(new Error('Falha ao carregar FFmpeg'));
+    s.onload=res; s.onerror=()=>rej(new Error('Falha ao carregar: '+src));
     document.head.appendChild(s);
   });
 }
@@ -1403,7 +1283,7 @@ async function ensureFF() {
   state.ffLoading = (async()=>{
     setStatus(sL,'Carregando FFmpeg (~25MB)…');
     await loadScript(FFCDN);
-    if (!window.FFmpeg) throw new Error('FFmpeg não carregou.');
+    if (!window.FFmpeg) throw new Error('FFmpeg não carregou. Verifique sua conexão.');
     const {createFFmpeg,fetchFile} = window.FFmpeg;
     state.ffFetch = fetchFile;
     const hasSAB = typeof SharedArrayBuffer!=='undefined';
@@ -1418,15 +1298,15 @@ async function ensureFF() {
     if (!hasSAB) { opts.corePath='https://unpkg.com/@ffmpeg/core-st@0.11.1/dist/ffmpeg-core.js'; opts.mainName='main'; }
     const ff=createFFmpeg(opts); await ff.load(); state.ffmpeg=ff; return ff;
   })();
-  try { return await state.ffLoading; }
+  try   { return await state.ffLoading; }
   catch (e) { state.ffLoading=null; throw e; }
-  finally { state.ffLoading=null; }
+  finally   { state.ffLoading=null; }
 }
 
 async function exportBurned() {
-  if (!state.srcFile) return setStatus(sL,'Envie um vídeo primeiro.','err');
-  if (!state.chunks.length) return setStatus(sL,'Sem legendas.','err');
-  if (state.burning) return;
+  if (!state.srcFile)        return setStatus(sL,'Envie um vídeo primeiro.','err');
+  if (!state.chunks.length)  return setStatus(sL,'Sem legendas para gravar.','err');
+  if (state.burning)         return;
   state.burning=true; state.cancelReq=false; setBusy(true);
   $('burnBtn').disabled=true; $('burnMob').disabled=true;
   $('cancelBtn').classList.remove('hidden'); $('cancelMob').classList.remove('hidden');
@@ -1449,69 +1329,25 @@ async function exportBurned() {
     setStatus(sL,'Gerando frames de legenda…');
 
     const vw = vid.videoWidth||1080, vh = vid.videoHeight||1920;
-    let scale = 1;
-    if (PERF === 'low') scale = 0.7;
-    else if (PERF === 'mid' && (vw>1280||vh>1280)) scale = 0.8;
-    // yuv420p exige dimensões pares
-    let outW = Math.round(vw * scale);
-    let outH = Math.round(vh * scale);
-    outW -= outW % 2; outH -= outH % 2;
-    if (outW < 2) outW = 2; if (outH < 2) outH = 2;
-
-    const sz = Math.max(20, Math.min(90, Math.round(+$('size').value*(outH/1080))));
+    const sz  = Math.max(24, Math.min(120, Math.round(+$('size').value*(vh/1080))));
     const pos = +$('pos').value;
-    const up = $('upTog').checked;
+    const up  = $('upTog').checked;
     const color=$('c1').value, hl=$('c2').value;
-    const sw = Math.max(0, Math.round(+$('strokeW').value*(outH/1080)*.55));
-    const scol = $('strokeCol').value||'#000';
+    const sw    = Math.max(0, Math.round(+$('strokeW').value*(vh/1080)*.55));
+    const scol  = $('strokeCol').value||'#000';
     const shAmt = +$('shadowAmt').value, shCol=$('shadowCol').value||'#000';
-    const hlBg = isHlBgOn();
-    const s = STYLES[state.activeStyle]?.css || {};
-    const bgCol = (hlBg || s.fullBg) ? ($('bgCol').value || s.bg || '#000') : '';
-    const bgOp = hlBg ? ((+$('bgOp').value||85)/100) : (s.fullBg ? 0.92 : 0);
+    const hlBg  = isHlBgOn();
+    const bgCol = hlBg?($('bgCol').value||'#000'):'';
+    const bgOp  = hlBg?(+$('bgOp').value||85)/100:0;
     const bgRad = +$('bgRad').value||8;
-    const mFam = getFont(false), hFam=getFont(true);
-    const doReal = state.realcar;
+    const mFam  = getFont(false), hFam=getFont(true);
+    const s     = STYLES[state.activeStyle].css;
+    const doReal= state.realcar;
 
+    // Build frame list
+    const frames=[];
     const totalWords = state.chunks.reduce((a,c)=>(c.words?.length||1)+a,0);
-    let useWordLevel = doReal;
-    if (PERF === 'low') useWordLevel = false;
-    else if (PERF === 'mid' && totalWords > 120) useWordLevel = false;
-    else if (PERF === 'high' && totalWords > 280) useWordLevel = totalWords < 400;
-
-    const animName = state.anim || 'pop';
-    const animDur = animName==='bounce' ? 0.34 : (animName==='scale' ? 0.26 : (animName==='fade' ? 0.28 : 0.30));
-    // Poucos sub-frames: FFmpeg.wasm quebra com dezenas de inputs
-    let animSteps = 1;
-    if (useWordLevel) {
-      if (PERF === 'high' && totalWords <= 80) animSteps = 4;
-      else if (PERF === 'high') animSteps = 2;
-      else if (PERF === 'mid' && totalWords <= 60) animSteps = 2;
-    }
-    const MAX_FRAMES = PERF === 'high' ? 100 : (PERF === 'mid' ? 60 : 40);
-
-    function animScale(p) {
-      const e = 1 - Math.pow(1 - Math.min(1, Math.max(0, p)), 3);
-      if (animName === 'pop' || animName === 'bounce') {
-        if (p < 0.55) return 0.55 + 0.72 * (p / 0.55);
-        return 1.27 - 0.09 * ((p - 0.55) / 0.45);
-      }
-      if (animName === 'scale') return 0.7 + 0.48 * e;
-      if (animName === 'fade') return 0.85 + 0.27 * e;
-      if (animName === 'slide') return 0.9 + 0.28 * e;
-      return 1.18;
-    }
-    function animAlpha(p) {
-      if (animName === 'fade') return Math.min(1, p * 1.4);
-      return 1;
-    }
-    function animDy(p, fSz) {
-      if (animName === 'slide') return (1 - Math.min(1, p * 1.2)) * fSz * 0.35;
-      if (animName === 'bounce' && p < 0.5) return (1 - p * 2) * fSz * 0.15;
-      return 0;
-    }
-
-    let frames=[];
+    const useWordLevel = doReal && totalWords<140;
     for (const c of state.chunks) {
       if (!c||!(c.end>c.start)||!String(c.text||'').trim()) continue;
       const words = c.words?.length ? c.words : (wordsFromChunk(c)||[{t:c.text,s:c.start,e:c.end}]);
@@ -1519,286 +1355,133 @@ async function exportBurned() {
         for (let wi=0;wi<words.length;wi++){
           const w=words[wi];
           const a=Math.max(c.start,w.s??c.start), b=Math.min(c.end,w.e??c.end);
-          if(b-a<0.02) continue;
-          const span = b - a;
-          const aDur = Math.min(animDur, Math.max(0.08, span * 0.55));
-          if (animSteps > 1 && aDur >= 0.08) {
-            for (let si=0; si<animSteps; si++) {
-              const t0 = a + (aDur * si) / animSteps;
-              const t1 = a + (aDur * (si + 1)) / animSteps;
-              const p = (si + 0.5) / animSteps;
-              frames.push({start:t0, end:t1, words, active:wi, ap:p});
-            }
-            if (a + aDur < b - 0.02) {
-              frames.push({start:a + aDur, end:b, words, active:wi, ap:1});
-            }
-          } else {
-            frames.push({start:a, end:b, words, active:wi, ap:1});
-          }
+          if(b-a<0.025)continue;
+          frames.push({start:a,end:b,words,active:wi});
         }
-      } else {
-        frames.push({start:c.start, end:c.end, words, active:-1, ap:1});
-      }
+      } else { frames.push({start:c.start,end:c.end,words,active:-1}); }
     }
-    if (!frames.length) throw new Error('Sem frames válidos.');
+    if (!frames.length) throw new Error('Sem frames válidos de legenda.');
 
-    // Limita total de overlays (evita Saída vazia no ffmpeg.wasm)
-    if (frames.length > MAX_FRAMES) {
-      setStatus(sL, `Muitos frames (${frames.length}). Simplificando…`);
-      const simplified=[];
-      for (const c of state.chunks) {
-        if (!c||!(c.end>c.start)||!String(c.text||'').trim()) continue;
-        const words = c.words?.length ? c.words : (wordsFromChunk(c)||[{t:c.text,s:c.start,e:c.end}]);
-        if (useWordLevel && words.length>1 && simplified.length + words.length <= MAX_FRAMES) {
-          for (let wi=0;wi<words.length;wi++){
-            const w=words[wi];
-            const a=Math.max(c.start,w.s??c.start), b=Math.min(c.end,w.e??c.end);
-            if(b-a<0.02) continue;
-            simplified.push({start:a, end:b, words, active:wi, ap:1});
-          }
-        } else {
-          simplified.push({start:c.start, end:c.end, words, active:-1, ap:1});
-        }
-      }
-      frames = simplified.slice(0, MAX_FRAMES);
-    }
-
-    const timedPngs=[]; // {name,start,end}
+    // Render canvas frames
+    const pngNames=[];
     for (let fi=0;fi<frames.length;fi++){
       if (state.cancelReq) return finish(false,'Cancelado.');
       const fr=frames[fi];
-      const ap = fr.ap ?? 1;
-      const cv=document.createElement('canvas');
-      cv.width=outW; cv.height=outH;
-      const ctx=cv.getContext('2d',{alpha:true});
-      ctx.clearRect(0,0,outW,outH);
+      const cv=document.createElement('canvas'); cv.width=vw; cv.height=vh;
+      const ctx=cv.getContext('2d',{alpha:true}); ctx.clearRect(0,0,vw,vh);
       ctx.textBaseline='middle'; ctx.textAlign='left';
-
-      const space=sz*.26, maxLine=outW * 0.78;
-      const scOn = animScale(ap);
+      const space=sz*.30, maxLine=vw*.88;
       const toks=fr.words.map((w,idx)=>({ txt:up?String(w.t).toUpperCase():String(w.t), on:fr.active===idx }));
+      // Wrap lines
       const lines=[]; let cur=[],curW=0;
       for (const tk of toks){
         const fam=tk.on?hFam:mFam, fw=tk.on?(state.curHlWeight||'900'):(state.curWeight||'900');
-        const layoutSz = tk.on ? sz * 1.18 : sz;
-        ctx.font=`${(state.italicOn||s.italic||(tk.on&&s.italicHl))?'italic ':''}${fw} ${layoutSz}px ${fam}`;
+        const fSz=tk.on?sz*1.14:sz;
+        ctx.font=`${(state.italicOn||s.italic||(tk.on&&s.italicHl))?'italic ':''}${fw} ${fSz}px ${fam}`;
         const tw=ctx.measureText(tk.txt).width+space;
         if(curW+tw>maxLine&&cur.length){lines.push({toks:cur,w:curW});cur=[];curW=0;}
         cur.push(tk); curW+=tw;
       }
       if(cur.length) lines.push({toks:cur,w:curW});
-      const lh=sz*1.22;
-      let y=outH*(pos/100)-((lines.length-1)*lh)/2;
-
-      const useFullBg = !!(s.bg && (s.fullBg || !hlBg));
-      if(useFullBg){
-        let mxW=0; for(const ln of lines) if(ln.w>mxW) mxW=ln.w;
-        const padX=space*1.5, padY=space*.7;
-        const bx=(outW-mxW)/2-padX, by=y-(lines.length*lh)/2+lh/2-padY;
+      const lh=sz*1.25;
+      let y=vh*(pos/100)-((lines.length-1)*lh)/2;
+      // Whole-caption bg
+      if(s.bg&&!hlBg){
+        let mxW=0; for(const ln of lines)if(ln.w>mxW)mxW=ln.w;
+        const padX=space*1.8,padY=space*.9;
+        const bx=(vw-mxW)/2-padX,by=y-(lines.length*lh)/2+lh/2-padY;
         ctx.fillStyle=s.bg;
         ctx.beginPath();
-        if(typeof ctx.roundRect==='function') ctx.roundRect(bx,by,mxW+padX*2,lines.length*lh+padY*2,6);
+        if(typeof ctx.roundRect==='function')ctx.roundRect(bx,by,mxW+padX*2,lines.length*lh+padY*2,8);
         else ctx.rect(bx,by,mxW+padX*2,lines.length*lh+padY*2);
         ctx.fill();
       }
-
+      // Draw words
       for(const ln of lines){
-        let x=(outW-ln.w+space)/2;
+        let x=(vw-ln.w+space)/2;
         for(const tk of ln.toks){
           const isOn=tk.on;
-          const fam=isOn?hFam:mFam, fw=isOn?(state.curHlWeight||'900'):(state.curWeight||'900');
-          const fSz = isOn ? sz * scOn : sz;
-          const dy = isOn ? animDy(ap, sz) : 0;
-          const alpha = isOn ? animAlpha(ap) : 1;
-          ctx.globalAlpha = alpha;
-          const layoutSz = isOn ? sz * 1.18 : sz;
-          ctx.font=`${(state.italicOn||s.italic||(isOn&&s.italicHl))?'italic ':''}${fw} ${layoutSz}px ${fam}`;
-          const layoutTw=ctx.measureText(tk.txt).width;
+          const fam=isOn?hFam:mFam,fw=isOn?(state.curHlWeight||'900'):(state.curWeight||'900');
+          const fSz=isOn?sz*1.14:sz;
           ctx.font=`${(state.italicOn||s.italic||(isOn&&s.italicHl))?'italic ':''}${fw} ${fSz}px ${fam}`;
           const tw=ctx.measureText(tk.txt).width;
           const fillCol=isOn?hl:color;
-          const drawX = x + (layoutTw - tw) / 2;
-          const drawY = y + dy;
+          // Highlight background
           if(hlBg&&isOn){
-            const padX=fSz*.14, padY=fSz*.11;
-            ctx.fillStyle=hexRgba(bgCol||hl,Math.max(.75,bgOp||0.85));
+            const padX=fSz*.16,padY=fSz*.14;
+            ctx.fillStyle=hexRgba(bgCol||hl,Math.max(.75,bgOp));
             ctx.beginPath();
-            if(typeof ctx.roundRect==='function') ctx.roundRect(drawX-padX,drawY-fSz*.55-padY,tw+padX*2,fSz*1.1+padY*2,bgRad);
-            else ctx.rect(drawX-padX,drawY-fSz*.55-padY,tw+padX*2,fSz*1.1+padY*2);
+            if(typeof ctx.roundRect==='function')ctx.roundRect(x-padX,y-fSz*.58-padY,tw+padX*2,fSz*1.16+padY*2,bgRad);
+            else ctx.rect(x-padX,y-fSz*.58-padY,tw+padX*2,fSz*1.16+padY*2);
             ctx.fill();
           }
+          // Shadow/glow
           if(s.glow){
             const gc=s.glowColor||hl;
-            for(const [blur,al] of [[fSz*1.3,.28],[fSz*.9,.48],[fSz*.5,.68],[fSz*.25,.88]]){
-              ctx.shadowColor=gc; ctx.shadowBlur=blur; ctx.globalAlpha=al*alpha; ctx.fillStyle=gc; ctx.fillText(tk.txt,drawX,drawY);
+            for(const [blur,alpha] of [[fSz*1.4,.3],[fSz*.95,.5],[fSz*.55,.7],[fSz*.28,.9]]){
+              ctx.shadowColor=gc; ctx.shadowBlur=blur; ctx.globalAlpha=alpha; ctx.fillStyle=gc; ctx.fillText(tk.txt,x,y);
             }
-            ctx.globalAlpha=alpha; ctx.shadowBlur=0; ctx.shadowColor='transparent';
+            ctx.globalAlpha=1; ctx.shadowBlur=0; ctx.shadowColor='transparent';
           } else if(shAmt>0){
             ctx.shadowColor=hexRgba(shCol,Math.min(1,shAmt/70));
-            ctx.shadowBlur=Math.max(4,fSz*.18*(shAmt/50));
-            ctx.shadowOffsetY=Math.max(2,fSz*.06);
+            ctx.shadowBlur=Math.max(5,fSz*.20*(shAmt/50));
+            ctx.shadowOffsetY=Math.max(2,fSz*.07);
           } else { ctx.shadowBlur=0; ctx.shadowColor='transparent'; ctx.shadowOffsetY=0; }
+          // Stroke
           if(sw>0&&scol!=='transparent'){
-            ctx.lineWidth=sw*(isOn?1.08:1); ctx.strokeStyle=scol; ctx.lineJoin='round';
-            ctx.strokeText(tk.txt,drawX,drawY);
+            ctx.lineWidth=sw*(isOn?1.08:1); ctx.strokeStyle=scol; ctx.lineJoin='round'; ctx.miterLimit=2;
+            ctx.strokeText(tk.txt,x,y);
           }
           ctx.shadowColor='transparent'; ctx.shadowBlur=0; ctx.shadowOffsetY=0;
-          ctx.fillStyle=fillCol; ctx.fillText(tk.txt,drawX,drawY);
-          ctx.globalAlpha = 1;
-          x+=layoutTw+space;
+          ctx.fillStyle=fillCol; ctx.fillText(tk.txt,x,y);
+          x+=tw+space;
         }
         y+=lh;
       }
       const blob=await new Promise(r=>cv.toBlob(r,'image/png'));
-      if(!blob) continue;
+      if(!blob)continue;
       const buf=new Uint8Array(await blob.arrayBuffer());
-      const nm=`cap${timedPngs.length}.png`;
+      const nm=`cap${fi}.png`;
       ff.FS('writeFile',nm,buf);
-      timedPngs.push({name:nm, start:fr.start, end:fr.end});
-      if(fi%4===0){ setProg(pf,5+(fi/frames.length)*45); setStatus(sL,`Frame ${fi+1}/${frames.length}…`); }
+      pngNames.push(nm);
+      if(fi%3===0){ setProg(pf,5+(fi/frames.length)*45); setStatus(sL,`Frame ${fi+1}/${frames.length}…`); }
     }
-    if(!timedPngs.length) throw new Error('Nenhum frame gerado.');
+    if(!pngNames.length) throw new Error('Nenhum frame de legenda gerado.');
 
+    // Write video input
     const ext=(state.srcFile.name.match(/\.[a-z0-9]+$/i)||['.mp4'])[0];
     const inN='input'+ext, outN='out.mp4';
     ff.FS('writeFile',inN,await state.ffFetch(state.srcFile));
-    setProg(pf,55); setStatus(sL,`Compositando ${timedPngs.length} overlays…`);
+    setProg(pf,55); setStatus(sL,'Compositando legendas…');
     if(state.cancelReq) return finish(false,'Cancelado.');
 
-    let filter='', last='[0:v]';
-    for(let i=0;i<timedPngs.length;i++){
-      const a=Math.max(0,+timedPngs[i].start).toFixed(3);
-      const b=Math.max(+a+.04,+timedPngs[i].end).toFixed(3);
-      const out=(i===timedPngs.length-1)?'[vout]':`[v${i}]`;
+    // Build filter graph
+    let filter='',last='[0:v]';
+    for(let i=0;i<pngNames.length;i++){
+      const a=Math.max(0,+frames[i].start).toFixed(3);
+      const b=Math.max(+a+.04,+frames[i].end).toFixed(3);
+      const out=(i===pngNames.length-1)?'[vout]':`[v${i}]`;
       filter+=`${last}[${i+1}:v]overlay=0:0:enable='between(t,${a},${b})'${out};`;
       last=out;
     }
     filter=filter.replace(/;$/,'');
 
     const dur=(Number.isFinite(vid.duration)&&vid.duration>0)?vid.duration:3600;
-    const preset = PERF==='low' ? 'ultrafast' : (PERF==='mid' ? 'ultrafast' : 'veryfast');
-    const crf = PERF==='low' ? 28 : 23;
-
-    const logs=[];
-    const onLog = ({type, message}) => { if (message) logs.push(String(message)); };
-    try { ff.setLogger(onLog); } catch(_){}
-
     const cmd=['-y','-i',inN];
-    for(const p of timedPngs) cmd.push('-i', p.name);
-    cmd.push(
-      '-t', String(dur),
-      '-filter_complex', filter,
-      '-map', '[vout]',
-      '-map', '0:a?',
-      '-c:v', 'libx264',
-      '-preset', preset,
-      '-crf', String(crf),
-      '-pix_fmt', 'yuv420p',
-      '-c:a', 'aac',
-      '-b:a', '128k',
-      '-movflags', '+faststart',
-      '-shortest',
-      outN
-    );
+    for(const n of pngNames) cmd.push('-i',n);
+    cmd.push('-t',String(dur),'-filter_complex',filter,'-map','[vout]','-map','0:a?',
+      '-c:v','libx264','-preset','ultrafast','-crf','23','-pix_fmt','yuv420p',
+      '-c:a','aac','-b:a','128k','-movflags','+faststart',outN);
 
-    try {
-      await ff.run(...cmd);
-    } catch (runErr) {
-      console.error('ffmpeg run', runErr, logs.slice(-30));
-      // Retry simplificado: 1 overlay por chunk, sem animação
-      setStatus(sL,'Retry simplificado…');
-      for (const p of timedPngs) { try { ff.FS('unlink', p.name); } catch(_){} }
-      timedPngs.length = 0;
-      const simple=[];
-      for (const c of state.chunks) {
-        if (!c||!(c.end>c.start)||!String(c.text||'').trim()) continue;
-        const words = c.words?.length ? c.words : (wordsFromChunk(c)||[{t:c.text,s:c.start,e:c.end}]);
-        simple.push({start:c.start, end:c.end, words, active:-1, ap:1});
-        if (simple.length >= 40) break;
-      }
-      for (let fi=0;fi<simple.length;fi++){
-        const fr=simple[fi];
-        const cv=document.createElement('canvas');
-        cv.width=outW; cv.height=outH;
-        const ctx=cv.getContext('2d',{alpha:true});
-        ctx.clearRect(0,0,outW,outH);
-        ctx.textBaseline='middle'; ctx.textAlign='left';
-        const space=sz*.26, maxLine=outW*0.78;
-        const toks=fr.words.map(w=>({txt:up?String(w.t).toUpperCase():String(w.t), on:false}));
-        const lines=[]; let cur=[],curW=0;
-        for (const tk of toks){
-          ctx.font=`${(state.italicOn||s.italic)?'italic ':''}${state.curWeight||'900'} ${sz}px ${mFam}`;
-          const tw=ctx.measureText(tk.txt).width+space;
-          if(curW+tw>maxLine&&cur.length){lines.push({toks:cur,w:curW});cur=[];curW=0;}
-          cur.push(tk); curW+=tw;
-        }
-        if(cur.length) lines.push({toks:cur,w:curW});
-        const lh=sz*1.22;
-        let y=outH*(pos/100)-((lines.length-1)*lh)/2;
-        if(s.bg){
-          let mxW=0; for(const ln of lines) if(ln.w>mxW) mxW=ln.w;
-          const padX=space*1.5, padY=space*.7;
-          const bx=(outW-mxW)/2-padX, by=y-(lines.length*lh)/2+lh/2-padY;
-          ctx.fillStyle=s.bg;
-          ctx.beginPath();
-          if(typeof ctx.roundRect==='function') ctx.roundRect(bx,by,mxW+padX*2,lines.length*lh+padY*2,6);
-          else ctx.rect(bx,by,mxW+padX*2,lines.length*lh+padY*2);
-          ctx.fill();
-        }
-        for(const ln of lines){
-          let x=(outW-ln.w+space)/2;
-          for(const tk of ln.toks){
-            ctx.font=`${(state.italicOn||s.italic)?'italic ':''}${state.curWeight||'900'} ${sz}px ${mFam}`;
-            const tw=ctx.measureText(tk.txt).width;
-            if(shAmt>0){
-              ctx.shadowColor=hexRgba(shCol,Math.min(1,shAmt/70));
-              ctx.shadowBlur=Math.max(4,sz*.18*(shAmt/50));
-              ctx.shadowOffsetY=Math.max(2,sz*.06);
-            }
-            if(sw>0){ ctx.lineWidth=sw; ctx.strokeStyle=scol; ctx.lineJoin='round'; ctx.strokeText(tk.txt,x,y); }
-            ctx.shadowColor='transparent'; ctx.shadowBlur=0;
-            ctx.fillStyle=color; ctx.fillText(tk.txt,x,y);
-            x+=tw+space;
-          }
-          y+=lh;
-        }
-        const blob=await new Promise(r=>cv.toBlob(r,'image/png'));
-        if(!blob) continue;
-        const buf=new Uint8Array(await blob.arrayBuffer());
-        const nm=`caps${fi}.png`;
-        ff.FS('writeFile',nm,buf);
-        timedPngs.push({name:nm, start:fr.start, end:fr.end});
-      }
-      filter=''; last='[0:v]';
-      for(let i=0;i<timedPngs.length;i++){
-        const a=Math.max(0,+timedPngs[i].start).toFixed(3);
-        const b=Math.max(+a+.04,+timedPngs[i].end).toFixed(3);
-        const out=(i===timedPngs.length-1)?'[vout]':`[vs${i}]`;
-        filter+=`${last}[${i+1}:v]overlay=0:0:enable='between(t,${a},${b})'${out};`;
-        last=out;
-      }
-      filter=filter.replace(/;$/,'');
-      const cmd2=['-y','-i',inN];
-      for(const p of timedPngs) cmd2.push('-i', p.name);
-      cmd2.push('-t',String(dur),'-filter_complex',filter,'-map','[vout]','-map','0:a?',
-        '-c:v','libx264','-preset','ultrafast','-crf','28','-pix_fmt','yuv420p',
-        '-c:a','aac','-b:a','128k','-movflags','+faststart','-shortest',outN);
-      await ff.run(...cmd2);
-    }
+    await ff.run(...cmd);
 
     let outData;
     try { outData=ff.FS('readFile',outN); }
-    catch(e){
-      console.error('readFile', e, logs.slice(-40));
-      throw new Error('Saída não encontrada. Tente vídeo menor ou menos palavras/slide.');
-    }
-    if(!outData||outData.length<1000){
-      console.error('empty out', outData&&outData.length, logs.slice(-40));
-      throw new Error('Saída vazia. Tente: vídeo mais curto, desligar Realçar, ou PC com mais memória.');
-    }
+    catch(e){ throw new Error('Arquivo de saída não encontrado. Tente vídeo menor ou menos legendas.'); }
+    if(!outData||outData.length<1000) throw new Error('Saída vazia. Tente outro vídeo ou desative o realce de palavras.');
 
     const outBlob=new Blob([outData.buffer],{type:'video/mp4'});
-    for(const p of timedPngs){try{ff.FS('unlink',p.name);}catch(_){}}
+    for(const n of pngNames){try{ff.FS('unlink',n);}catch(_){}}
     try{ff.FS('unlink',inN);}catch(_){}
     try{ff.FS('unlink',outN);}catch(_){}
 
@@ -1807,13 +1490,14 @@ async function exportBurned() {
     finish(true);
   } catch(err) {
     console.error(err);
-    finish(false,'Erro: '+(err.message||'falha'));
+    finish(false,'Erro: '+(err.message||'falha no processamento'));
   }
 }
 
+/* ─── INIT ─── */
 function initUpload() {
   $('pickBtn').addEventListener('click', e=>{ e.stopPropagation(); $('fileInput').click(); });
-  $('drop').addEventListener('click', ()=>$('fileInput').click());
+  $('drop').addEventListener('click',   ()=>$('fileInput').click());
   $('drop').addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); $('fileInput').click(); } });
   ['dragenter','dragover'].forEach(ev=>$('drop').addEventListener(ev,e=>{ e.preventDefault(); $('drop').classList.add('drag'); }));
   ['dragleave','drop'].forEach(ev=>$('drop').addEventListener(ev,e=>{ e.preventDefault(); $('drop').classList.remove('drag'); }));
@@ -1826,15 +1510,14 @@ function initUpload() {
       $('subFile').click();
     }
   });
-  $('wmChk').addEventListener('change', ()=> $('wm').classList.toggle('show', $('wmChk').checked));
   $('openProjBtn').addEventListener('click', ()=>$('projFile').click());
   $('projFile').addEventListener('change', e=>{ const f=e.target.files[0]; e.target.value=''; if(f) loadProject(f); });
 }
 
 function initTabs() {
   $$('.stab').forEach(t=>t.addEventListener('click', ()=>{
-    $$('.stab').forEach(x=>x.classList.remove('on'));
-    t.classList.add('on');
+    $$('.stab').forEach(x=>{ x.classList.remove('on'); x.setAttribute('aria-selected','false'); });
+    t.classList.add('on'); t.setAttribute('aria-selected','true');
     const isStyle = t.dataset.tab==='style';
     $('tabStyle').classList.toggle('hidden',!isStyle);
     $('tabText').classList.toggle('hidden',isStyle);
@@ -1850,14 +1533,14 @@ function initTabs() {
   $('closeSepBtn').addEventListener('click', ()=>{
     $('sep').classList.remove('open');
     $('tabStyle').classList.remove('hidden');
-    $$('.stab').forEach(t=>{ const on=t.dataset.tab==='style'; t.classList.toggle('on',on); });
+    $$('.stab').forEach(t=>{ const on=t.dataset.tab==='style'; t.classList.toggle('on',on); t.setAttribute('aria-selected',on?'true':'false'); });
   });
 
   $$('.ftab').forEach(t=>t.addEventListener('click', ()=>{
     $$('.ftab').forEach(x=>x.classList.remove('on')); t.classList.add('on');
     state.ftab = t.dataset.ft||'main';
-    $('fontSel').value = state.ftab==='hl' ? state.curHlFont : state.curFont;
-    $('fontWt').value = state.ftab==='hl' ? state.curHlWeight : state.curWeight;
+    $('fontSel').value  = state.ftab==='hl' ? state.curHlFont  : state.curFont;
+    $('fontWt').value   = state.ftab==='hl' ? state.curHlWeight: state.curWeight;
   }));
   $('fontSel').addEventListener('change', ()=>{
     if(state.ftab==='hl') state.curHlFont=$('fontSel').value;
@@ -1871,9 +1554,9 @@ function initTabs() {
   });
 
   $('btnNorm').addEventListener('click', ()=>{ state.italicOn=false; syncStyleBtns(); schedRender(); });
-  $('btnItal').addEventListener('click', ()=>{ state.italicOn=true; syncStyleBtns(); schedRender(); });
-  $('btnAA').addEventListener('click', ()=>{ $('upTog').checked=true; syncStyleBtns(); schedRender(); });
-  $('btnAa').addEventListener('click', ()=>{ $('upTog').checked=false; syncStyleBtns(); schedRender(); });
+  $('btnItal').addEventListener('click', ()=>{ state.italicOn=true;  syncStyleBtns(); schedRender(); });
+  $('btnAA').addEventListener('click',   ()=>{ $('upTog').checked=true;  syncStyleBtns(); schedRender(); });
+  $('btnAa').addEventListener('click',   ()=>{ $('upTog').checked=false; syncStyleBtns(); schedRender(); });
 
   $$('.hlbg-btn').forEach(b=>b.addEventListener('click', ()=>{
     $$('.hlbg-btn').forEach(x=>x.classList.remove('on'));
@@ -1885,7 +1568,6 @@ function initTabs() {
     $$('.sf').forEach(x=>x.classList.remove('on')); b.classList.add('on');
     state.activeFilter=b.dataset.f||'all'; renderStyleGrid();
   }));
-  $$('.anim-btn').forEach(b=>b.addEventListener('click', ()=> setAnim(b.dataset.anim)));
 
   $('createThemeBtn').addEventListener('click', ()=>{
     const name = prompt('Nome do novo tema:','Meu tema');
@@ -1918,15 +1600,16 @@ function initPreview() {
     state.playRaf=requestAnimationFrame(tick);
   }
   function stopLoop() { if(state.playRaf){cancelAnimationFrame(state.playRaf);state.playRaf=0;} }
-  vid.addEventListener('play', startLoop);
+  vid.addEventListener('play',    startLoop);
   vid.addEventListener('playing', startLoop);
-  vid.addEventListener('pause', stopLoop);
-  vid.addEventListener('ended', stopLoop);
-  vid.addEventListener('timeupdate', schedRender);
-  vid.addEventListener('loadedmetadata', schedRender);
-  vid.addEventListener('seeked', schedRender);
-  window.addEventListener('resize', schedRender);
+  vid.addEventListener('pause',   stopLoop);
+  vid.addEventListener('ended',   stopLoop);
+  vid.addEventListener('timeupdate',    schedRender);
+  vid.addEventListener('loadedmetadata',schedRender);
+  vid.addEventListener('seeked',        schedRender);
+  window.addEventListener('resize',     schedRender);
 
+  // Sync quick-bar ↔ style editor
   $('pos').addEventListener('input', ()=>{ $('posD').value=$('pos').value; syncAllLabels(); schedRender(); });
   $('size').addEventListener('input',()=>{ $('sizeD').value=$('size').value; syncAllLabels(); schedRender(); });
   $('posD').addEventListener('input', ()=>{ $('pos').value=$('posD').value; syncAllLabels(); schedRender(); });
@@ -1940,12 +1623,11 @@ function initPreview() {
 
   $('speedSel').addEventListener('change', ()=>{ vid.playbackRate=+$('speedSel').value; });
   $('togCapBtn').addEventListener('click', ()=>{ state.showCap=!state.showCap; $('togCapBtn').classList.toggle('on',!state.showCap); schedRender(); });
-  $('togSafeBtn').addEventListener('click',()=>{
-    const on = $('safeOv').classList.toggle('on');
-    $('togSafeBtn').classList.toggle('on', on);
+  $('togSafeBtn').addEventListener('click',()=>{ const on=$('safeOv').classList.toggle('on'); $('togSafeBtn').classList.toggle('on',on); });
+  $('playBtn').addEventListener('click', ()=>{
+    if (vid.paused){vid.play().catch(()=>{});}else vid.pause();
   });
-  $('playBtn').addEventListener('click', ()=>{ if (vid.paused){vid.play().catch(()=>{});}else vid.pause(); });
-  vid.addEventListener('play', ()=>$('playBtn').textContent='⏸ Pause');
+  vid.addEventListener('play',  ()=>$('playBtn').textContent='⏸ Pause');
   vid.addEventListener('pause', ()=>$('playBtn').textContent='▶ Play');
   vid.addEventListener('ended', ()=>$('playBtn').textContent='▶ Play');
 
@@ -1961,21 +1643,22 @@ function initPreview() {
   });
 
   $('regroupBtn').addEventListener('click', ()=>{
-    if(!state.rawWords.length){setStatus(sL,'Sem dados palavra-a-palavra.','err');return;}
-    const maxW=Math.max(1,+$('maxWords').value||2);
-    state.chunks=groupWords(state.rawWords,'',maxW,2.0);
-    buildLines(); schedRender(); setStatus(sL,'Reagrupado!','ok'); saveLocal();
+    if(!state.rawWords.length){setStatus(sL,'Sem dados palavra-a-palavra para reagrupar.','err');return;}
+    const maxW=Math.max(1,+$('maxWords').value||5);
+    state.chunks=groupWords(state.rawWords,'',maxW,2.2);
+    buildLines(); schedRender(); setStatus(sL,'Reagrupado!','ok');
   });
   $('maxWords').addEventListener('input', ()=>{ $('maxWordsv').textContent=$('maxWords').value; });
-  $('addLnBtn').addEventListener('click', ()=>addAfter(state.chunks.length-1));
+  $('addLnBtn').addEventListener('click',  ()=>addAfter(state.chunks.length-1));
+  $('addLnBtn').addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault();addAfter(state.chunks.length-1);} });
 }
 
 function initExports() {
-  $('srtBtn').addEventListener('click', exportSrt);
-  $('vttBtn').addEventListener('click', exportVtt);
-  $('srtMob').addEventListener('click', exportSrt);
+  $('srtBtn').addEventListener('click',  exportSrt);
+  $('vttBtn').addEventListener('click',  exportVtt);
+  $('srtMob').addEventListener('click',  exportSrt);
   $('saveBtn').addEventListener('click', saveProject);
-  $('resetBtn').addEventListener('click', onReset);
+  $('resetBtn').addEventListener('click',onReset);
   $('moreMob').addEventListener('click', ()=>{
     const menu=[['Baixar .VTT',exportVtt],['Baixar .TXT',exportTxt],['Salvar projeto',saveProject],['Novo vídeo',onReset]];
     const c=prompt('Escolha:\n'+menu.map((m,i)=>`${i+1}. ${m[0]}`).join('\n'));
@@ -1985,12 +1668,13 @@ function initExports() {
 }
 
 function initBurn() {
-  $('burnBtn').addEventListener('click', exportBurned);
-  $('burnMob').addEventListener('click', exportBurned);
+  $('burnBtn').addEventListener('click',   exportBurned);
+  $('burnMob').addEventListener('click',   exportBurned);
   $('cancelBtn').addEventListener('click', ()=>{ state.cancelReq=true; });
   $('cancelMob').addEventListener('click', ()=>{ state.cancelReq=true; });
 }
 
+// ─── BOOT ───
 (function boot(){
   renderStyleGrid();
   initTabs();
@@ -1999,30 +1683,7 @@ function initBurn() {
   initExports();
   initBurn();
   applyStyle(0);
-  setAnim('pop');
   syncAllLabels();
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (raw) {
-      const data = JSON.parse(raw);
-      if (data?.chunks?.length) {
-        const tip = PROJECT_ID
-          ? `Projeto ${PROJECT_ID.slice(0,8)}… encontrado. Envie o mesmo vídeo para continuar.`
-          : 'Projeto anterior encontrado. Envie o mesmo vídeo para continuar.';
-        setStatus(s0, tip);
-      }
-    }
-  } catch(_){}
-  if (PROJECT_ID) {
-    // Mantém o ?project= na URL ao recarregar / compartilhar o mesmo link neste browser
-    try {
-      const u = new URL(location.href);
-      if (!u.searchParams.get('project')) {
-        u.searchParams.set('project', PROJECT_ID);
-        history.replaceState(null, '', u);
-      }
-    } catch(_){}
-  }
   window.addEventListener('beforeunload', e=>{
     if(state.chunks.length||state.burning){ e.preventDefault(); e.returnValue=''; }
   });
