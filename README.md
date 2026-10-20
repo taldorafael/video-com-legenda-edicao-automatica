@@ -1,24 +1,55 @@
-# 🎬 Legendar Videos (videocomlegenda)
+# Video com Legenda
 
-Legendas **virais** geradas 100% no navegador com IA — sem servidor, sem upload, 100% privado e gratuito.
+**Legendas virais 100% locais no navegador** — Whisper (Transformers.js) + FFmpeg.wasm.
 
-## ✨ Funcionalidades
+Site: [https://videocomlegenda.vercel.app/](https://videocomlegenda.vercel.app/)
 
-- 🧠 **Transcrição com IA** — Whisper (Xenova) rodando localmente via WebGPU/CPU
-- 🎨 **40+ estilos prontos** — Hormozi, Beast, CapCut, TikTok, fontes misturadas, glow, neon
-- 🔤 **Editor de legendas** — edite palavra por palavra, divida/junte linhas, ajuste tempos
-- 🎞️ **Preview fiel** — quebra de linha idêntica ao vídeo final exportado
-- 🎬 **Exportação com legenda queimada** — FFmpeg.wasm compõe os frames no próprio navegador
-- 📦 **Exporta .SRT / .VTT / .TXT** e salva/abre projetos (.json)
-- 📱 **Modo mobile** — barra de ações fixa e layout responsivo
-- ⚡ **Detecção de performance** — ajusta modelo, animações e qualidade automaticamente
+## Funcionalidades
 
-## 🚀 Deploy na Vercel
+- Transcrição automática com **Whisper** (tiny / base / small) rodando no seu dispositivo
+- Suporte a **WebGPU** quando disponível
+- Estilos estilo **CapCut / TikTok** (Hormozi, MrBeast, Neon, Mixed fonts etc.)
+- Animações palavra-a-palavra no preview (Pop, Bounce, Scale, Fade, Slide)
+- Preview com **quebra de linha idêntica** ao vídeo exportado
+- Edição de legendas, tempos, divisão de linhas
+- Exportação:
+  - Vídeo com legenda queimada (MP4)
+  - `.SRT` / `.VTT`
+  - Projeto `.json` (salvar/carregar)
+- Importação de legendas prontas (`.srt` / `.vtt`)
+- Marca d’água opcional
+- Área segura (safe zone) para redes sociais
+- 100% privado — nada sai do seu computador
 
-1. Faça push destes arquivos para um repositório GitHub
-2. Na Vercel: **Add New → Project → Import** o repositório
-3. Framework: **Other** · Build: vazio · Output: raiz do projeto
-4. Deploy! O `vercel.json` já configura os headers (COOP/COEP para SharedArrayBuffer)
+## Stack
+
+| Tecnologia | Uso |
+|------------|-----|
+| [@huggingface/transformers](https://huggingface.co/docs/transformers.js) | Whisper no browser |
+| [@ffmpeg/ffmpeg](https://github.com/ffmpegwasm/ffmpeg.wasm) | Queima de legendas |
+| CSS puro + variáveis | UI dark moderna |
+| Vanilla JS (ES modules) | Lógica completa |
+
+Nenhum backend. Nenhum upload de vídeo para servidores.
+
+## Arquivos do projeto
+
+```
+videocomlegenda/
+├── index.html      # Estrutura da página
+├── style.css       # Estilos completos
+├── script.js       # Lógica (Whisper + FFmpeg + UI)
+├── package.json    # Metadados e scripts locais
+├── vercel.json     # Headers COOP/COEP + rotas estáticas
+└── README.md
+```
+
+## Deploy no Vercel
+
+1. Suba a pasta no GitHub (ou use Vercel CLI)
+2. Importe o repositório no [vercel.com](https://vercel.com)
+3. Framework Preset: **Other** (static)
+4. Deploy
 
 Ou via CLI:
 
@@ -27,38 +58,42 @@ npm i -g vercel
 vercel --prod
 ```
 
-## 💻 Rodar localmente
+### Headers importantes
+
+O `vercel.json` já configura:
+
+- `Cross-Origin-Opener-Policy: same-origin`
+- `Cross-Origin-Embedder-Policy: require-corp`
+
+Esses headers são **necessários** para `SharedArrayBuffer` (FFmpeg.wasm multithread). Sem eles o FFmpeg cai no modo single-thread (mais lento, mas funciona).
+
+## Desenvolvimento local
 
 ```bash
+# Qualquer servidor estático serve
 npx serve .
 # ou
-python3 -m http.server 3000
+python -m http.server 3000
 ```
 
-> ⚠️ O ffmpeg.wasm precisa de HTTP(S). Abrir o `index.html` via `file://` não funciona.
+Abra `http://localhost:3000`.
 
-## 📁 Estrutura
+> **Nota:** Para COOP/COEP local, use um servidor que envie os headers (ex.: `npx serve` com config, ou VS Code Live Server com extensão). Sem os headers o app ainda funciona (FFmpeg single-thread).
 
-| Arquivo | Descrição |
-|---|---|
-| `index.html` | Estrutura da aplicação |
-| `style.css` | Tema dark completo + animações |
-| `script.js` | Toda a lógica (Whisper, editor, render, FFmpeg) |
-| `vercel.json` | Headers (COOP/COEP), cache e segurança |
-| `package.json` | Metadados e scripts |
+## Modelos Whisper
 
-## 🔧 Tecnologias
+| Modelo | Tamanho | Uso recomendado |
+|--------|---------|-----------------|
+| `Xenova/whisper-tiny` | ~40 MB | Celulares / PCs fracos |
+| `Xenova/whisper-base` | ~80 MB | Equilíbrio (padrão) |
+| `Xenova/whisper-small` | ~250 MB | Máxima precisão |
 
-- [@huggingface/transformers.js](https://huggingface.co/docs/transformers.js) — Whisper no browser
-- [@ffmpeg/ffmpeg](https://ffmpegwasm.netlify.app) — composição de vídeo
-- Canvas 2D — render dos frames de legenda
-- Google Fonts — Inter, Montserrat, Poppins, Anton, Bebas Neue…
+O app detecta performance do dispositivo e sugere o modelo adequado.
 
-## 🔒 Privacidade
+## Licença
 
-Nenhum vídeo ou áudio sai do seu dispositivo. Modelos de IA são baixados
-do CDN do Hugging Face e cacheados no navegador.
+MIT — use livremente.
 
-## 📄 Licença
+---
 
-MIT
+Feito com ❤️ para criadores de conteúdo. Tudo roda no seu navegador.
