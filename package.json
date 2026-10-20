@@ -1,12 +1,27 @@
 {
   "name": "videocomlegenda",
   "version": "1.0.0",
-  "description": "Legende vídeos 100% no navegador com IA (Whisper) e FFmpeg.wasm. Estilos virais, fontes misturadas e animações.",
+  "description": "Legendas virais 100% locais no navegador — Whisper + FFmpeg.wasm. Estilos CapCut, animações palavra-a-palavra e exportação com legenda queimada.",
   "private": true,
+  "type": "module",
   "scripts": {
-    "dev": "npx serve .",
-    "start": "npx serve ."
+    "dev": "npx serve . -p 3000",
+    "start": "npx serve . -p 3000",
+    "preview": "npx serve ."
   },
-  "keywords": ["legendas", "subtitles", "whisper", "ffmpeg", "capcut", "viral"],
-  "license": "MIT"
+  "keywords": [
+    "legendas",
+    "whisper",
+    "ffmpeg",
+    "capcut",
+    "tiktok",
+    "video",
+    "subtitles",
+    "webgpu"
+  ],
+  "author": "Video com Legenda",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
 }
