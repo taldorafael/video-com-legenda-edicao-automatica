@@ -44,6 +44,19 @@ videocomlegenda/
 └── README.md
 ```
 
+
+## Grátis no Vercel (Hobby)
+
+- Hospedagem **estática** → plano Hobby **sem cartão / sem custo**.
+- Não usa serverless functions, banco nem bandwidth especial.
+- Link com projeto isolado (mesmo navegador):
+
+```
+https://videocomlegenda.vercel.app/?project=ec462cba-ba20-47ad-a386-cc2cdfecefe5
+```
+
+O `?project=UUID` só separa o auto-save no **localStorage** deste browser. Não há nuvem: cada pessoa vê só o que salvou no próprio aparelho. Para compartilhar legenda use **Salvar** (JSON) ou **.SRT**.
+
 ## Deploy no Vercel
 
 1. Suba a pasta no GitHub (ou use Vercel CLI)
@@ -58,14 +71,15 @@ npm i -g vercel
 vercel --prod
 ```
 
-### Headers importantes
+### Headers (importante)
 
-O `vercel.json` já configura:
+**Não use COEP (`Cross-Origin-Embedder-Policy`)** neste projeto.
 
-- `Cross-Origin-Opener-Policy: same-origin`
-- `Cross-Origin-Embedder-Policy: require-corp`
+O Transformers.js (Whisper) cria Workers a partir do CDN (jsDelivr). Com COEP ativo o browser bloqueia esses Workers e aparece o erro:
 
-Esses headers são **necessários** para `SharedArrayBuffer` (FFmpeg.wasm multithread). Sem eles o FFmpeg cai no modo single-thread (mais lento, mas funciona).
+`SecurityError: Failed to construct 'Worker'… cannot be accessed from origin`
+
+O `vercel.json` atual **não envia COEP**. O FFmpeg.wasm usa automaticamente o core single-thread (`@ffmpeg/core-st`) quando `SharedArrayBuffer` não está disponível — funciona normalmente, só um pouco mais lento na exportação.
 
 ## Desenvolvimento local
 
