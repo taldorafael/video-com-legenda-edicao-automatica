@@ -91,7 +91,7 @@ const FONTS = {
 const STYLES = [
   { n:'HORMOZI 1', cat:'padrao', css:{color:'#ffffff',hl:'#22e06b',strokeW:0,shadow:84,font:'montserrat',hlFont:'montserrat',up:true,weight:'900'} },
   { n:'HORMOZI 2', cat:'padrao', css:{color:'#ffffff',hl:'#f9ea03',strokeW:0,shadow:84,font:'montserrat',hlFont:'montserrat',up:true,weight:'900'} },
-  { n:'BEAST PRO', cat:'padrao', css:{color:'#f9ea03',hl:'#ffffff',stroke:'#000000',strokeW:5,shadow:45,font:'impact',hlFont:'impact',up:true,weight:'900'} },
+  { n:'BEAST',     cat:'padrao', css:{color:'#f9ea03',hl:'#ffffff',stroke:'#000000',strokeW:5,shadow:45,font:'impact',hlFont:'impact',up:true,weight:'900'} },
   { n:'Negativa',  cat:'padrao', css:{color:'#ffffff',hl:'#ffffff',bg:'#000000',stroke:'#000000',strokeW:4,shadow:30,font:'inter',hlFont:'inter',weight:'900'} },
   { n:'LEON',      cat:'padrao', css:{color:'#ffffff',hl:'#ffe600',bg:'#ff4a1c',stroke:'#000000',strokeW:4,shadow:40,font:'inter',hlFont:'inter',up:true,weight:'900'} },
   { n:'LAGUNA',    cat:'padrao', css:{color:'#ffffff',hl:'#00e0ff',stroke:'#000000',strokeW:5,shadow:50,font:'inter',hlFont:'inter',up:true,weight:'900'} },
@@ -199,7 +199,7 @@ const STYLES = [
   }},
 
   /* Print 9 + 12 · outline forte */
-  { n:'BEASTX', cat:'tscaps', css:{
+  { n:'BEAST', cat:'tscaps', css:{
     color:'#ffffff', hl:'#fde047', stroke:'#000000', strokeW:8, shadow:52,
     font:'impact', hlFont:'impact', up:true, weight:'900'
   }},
@@ -709,9 +709,7 @@ async function handleFile(f) {
 
   try {
     const buf = await f.arrayBuffer();
-    const AC = window.AudioContext || window.webkitAudioContext;
-    if (!AC) throw new Error('Seu navegador não suporta áudio.');
-    const ctx = new AC({sampleRate:16000});
+    const ctx = new AudioContext({sampleRate:16000});
     let ab;
     try { ab = await ctx.decodeAudioData(buf); }
     catch(e) { throw new Error('Não foi possível decodificar áudio: '+e.message); }
