@@ -2,6 +2,12 @@ import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@huggingface/transfo
 env.allowLocalModels = false;
 env.useBrowserCache = true;
 
+/* Projeto via URL: https://videocomlegenda.vercel.app/?project=UUID
+   Grátis, 100% local (localStorage). Cada ID isola o auto-save neste navegador. */
+const _params = new URLSearchParams(location.search);
+const PROJECT_ID = (_params.get('project') || _params.get('p') || '').trim().slice(0, 64);
+const LS_KEY = PROJECT_ID ? `legendar_proj_${PROJECT_ID}` : 'legendar_auto';
+
 const $ = id => document.getElementById(id);
 const $$ = s => [...document.querySelectorAll(s)];
 const clamp = (n,a,b) => Math.max(a, Math.min(b, n));
@@ -782,7 +788,7 @@ function saveProject() {
   dlBlob('projeto.json', JSON.stringify(getProjectData(),null,2), 'application/json');
 }
 function saveLocal() {
-  try { localStorage.setItem('legendar_auto', JSON.stringify(getProjectData())); } catch(_){}
+  try { localStorage.setItem(LS_KEY, JSON.stringify(getProjectData())); } catch(_){}
 }
 async function loadProject(f) {
   try {
@@ -838,7 +844,7 @@ function setBusy(b) {
 function onReset() {
   if ((state.chunks.length||state.burning) && !confirm('Descartar e começar de novo?')) return;
   if (state.srcUrl) URL.revokeObjectURL(state.srcUrl);
-  try { localStorage.removeItem('legendar_auto'); } catch(_){}
+  try { localStorage.removeItem(LS_KEY); } catch(_){}
   location.reload();
 }
 
@@ -1456,14 +1462,27 @@ function initBurn() {
   setAnim('pop');
   syncAllLabels();
   try {
-    const raw = localStorage.getItem('legendar_auto');
+    const raw = localStorage.getItem(LS_KEY);
     if (raw) {
       const data = JSON.parse(raw);
       if (data?.chunks?.length) {
-        setStatus(s0,'Projeto anterior encontrado. Envie o mesmo vídeo para continuar.');
+        const tip = PROJECT_ID
+          ? `Projeto ${PROJECT_ID.slice(0,8)}… encontrado. Envie o mesmo vídeo para continuar.`
+          : 'Projeto anterior encontrado. Envie o mesmo vídeo para continuar.';
+        setStatus(s0, tip);
       }
     }
   } catch(_){}
+  if (PROJECT_ID) {
+    // Mantém o ?project= na URL ao recarregar / compartilhar o mesmo link neste browser
+    try {
+      const u = new URL(location.href);
+      if (!u.searchParams.get('project')) {
+        u.searchParams.set('project', PROJECT_ID);
+        history.replaceState(null, '', u);
+      }
+    } catch(_){}
+  }
   window.addEventListener('beforeunload', e=>{
     if(state.chunks.length||state.burning){ e.preventDefault(); e.returnValue=''; }
   });
