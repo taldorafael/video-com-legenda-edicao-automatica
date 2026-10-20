@@ -1,17 +1,20 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-<meta name="theme-color" content="#070a12"/>
-<meta name="description" content="Legende seus vídeos 100% no navegador com IA. Estilos virais, fontes misturadas, animações e exportação com legenda queimada. Privado e gratuito."/>
-<title>Legendar Videos — Legendas virais com IA no navegador</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Manrope:wght@700;800&family=Montserrat:wght@700;800;900&family=Barlow:wght@700;800;900&family=Poppins:wght@700;800;900&family=Oswald:wght@600;700&family=Bebas+Neue&family=Anton&family=Archivo+Black&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="style.css"/>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%233b82f6'/><text x='50' y='68' font-size='55' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>L</text></svg>"/>
-<base target="_blank">
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <meta name="theme-color" content="#070a12"/>
+  <meta name="description" content="Legendas virais 100% locais no navegador. Whisper + FFmpeg. Estilos CapCut, animações e preview idêntico ao vídeo final."/>
+  <meta name="keywords" content="legenda, vídeo, CapCut, Whisper, FFmpeg, legendas automáticas, TikTok, Reels"/>
+  <meta property="og:title" content="Video com Legenda – Legendas virais em segundos"/>
+  <meta property="og:description" content="100% local · grátis · estilos CapCut + animações. Nada sai do seu dispositivo."/>
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://videocomlegenda.vercel.app/"/>
+  <title>Video com Legenda – Legendas virais em segundos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Manrope:wght@700;800&family=Montserrat:wght@700;800;900&family=Barlow:wght@700;800;900&family=Poppins:wght@700;800;900&family=Oswald:wght@600;700&family=Bebas+Neue&family=Anton&family=Archivo+Black&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
 
@@ -20,7 +23,7 @@
     <span class="logo-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
     </span>
-    Legendar Videos
+    Video com Legenda
     <span id="perfBadge" class="perf-badge"></span>
   </div>
   <span class="badge">100% local · grátis</span>
@@ -32,7 +35,7 @@
     <p>Estilos CapCut + fontes misturadas + animações. Preview agora quebra linha igual ao vídeo final.</p>
   </div>
 
-  <div class="dropzone" id="drop" tabindex="0" role="button" aria-label="Arraste seu vídeo aqui ou clique para escolher">
+  <div class="dropzone" id="drop" tabindex="0" role="button" aria-label="Arraste ou escolha um vídeo">
     <div class="dz-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
     </div>
@@ -68,7 +71,7 @@
       <label class="chk"><input type="checkbox" id="gpuChk" checked/> GPU (WebGPU)</label>
       <label class="chk"><input type="checkbox" id="translateChk"/> Traduzir p/ inglês</label>
       <label class="chk"><input type="checkbox" id="skipChk"/> Importar .srt / .vtt</label>
-      <label class="chk"><input type="checkbox" id="wmChk"/> Marca d'água</label>
+      <label class="chk"><input type="checkbox" id="wmChk"/> Marca d’água</label>
     </div>
     <hr class="divln"/>
     <div class="opts-row">
@@ -110,6 +113,10 @@
     <div id="tabStyle">
       <div class="sfilters">
         <button type="button" class="sf on" data-f="all">Todos</button>
+        <button type="button" class="sf" data-f="padrao">Padrão</button>
+        <button type="button" class="sf" data-f="tiktok">TikTok</button>
+        <button type="button" class="sf" data-f="mixed">Mixed</button>
+        <button type="button" class="sf" data-f="tscaps">Prints</button>
         <button type="button" class="sf" data-f="custom">Custom</button>
       </div>
       <div class="sgrid" id="sgrid" role="listbox"></div>
@@ -125,7 +132,7 @@
 
     <div id="sep" class="sep">
       <div class="sephead">
-        <span class="backbtn" id="closeSepBtn">&larr; <span id="sepName">Estilo</span></span>
+        <span class="backbtn" id="closeSepBtn">← <span id="sepName">Estilo</span></span>
         <button type="button" class="btn btn-p btn-sm" id="createThemeBtn">+ Criar tema</button>
       </div>
       <div class="slbl">Fonte</div>
@@ -195,7 +202,7 @@
 
     <div class="pacts">
       <button type="button" class="btn btn-p" id="burnBtn">Baixar com legenda</button>
-      <button type="button" class="btn btn-d hidden" id="cancelBtn">&#10006; Cancelar</button>
+      <button type="button" class="btn btn-d hidden" id="cancelBtn">✖ Cancelar</button>
       <button type="button" class="btn btn-g" id="srtBtn">.SRT</button>
       <button type="button" class="btn btn-g" id="vttBtn">.VTT</button>
       <button type="button" class="btn btn-g" id="saveBtn">Salvar</button>
@@ -211,11 +218,11 @@
             <div class="wait-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
             </div>
-            <strong style="font-size:14.5px">IA trabalhando&hellip;</strong>
+            <strong style="font-size:14.5px">IA trabalhando…</strong>
             <div class="ai-steps" id="aiSteps">
-              <div class="ai-step" data-s="1"><span class="ai-dot"></span> Transcrevendo áudio&hellip;</div>
-              <div class="ai-step" data-s="2"><span class="ai-dot"></span> Detectando palavras&hellip;</div>
-              <div class="ai-step" data-s="3"><span class="ai-dot"></span> Montando legendas&hellip;</div>
+              <div class="ai-step" data-s="1"><span class="ai-dot"></span> Transcrevendo áudio…</div>
+              <div class="ai-step" data-s="2"><span class="ai-dot"></span> Detectando palavras…</div>
+              <div class="ai-step" data-s="3"><span class="ai-dot"></span> Montando legendas…</div>
             </div>
           </div>
         </div>
@@ -238,17 +245,17 @@
             <option>4:5</option>
             <option>1:1</option>
           </select>
-          <button type="button" class="icbtn" id="togCapBtn" title="Ocultar legenda">&#128065;</button>
-          <button type="button" class="icbtn" id="togSafeBtn" title="Área segura (vermelho)">&#128241;</button>
+          <button type="button" class="icbtn" id="togCapBtn" title="Ocultar legenda">👁</button>
+          <button type="button" class="icbtn" id="togSafeBtn" title="Área segura (vermelho)">📱</button>
           <select id="speedSel">
-            <option value="0.5">0.5&times;</option>
-            <option value="1" selected>1&times;</option>
-            <option value="1.5">1.5&times;</option>
-            <option value="2">2&times;</option>
+            <option value="0.5">0.5×</option>
+            <option value="1" selected>1×</option>
+            <option value="1.5">1.5×</option>
+            <option value="2">2×</option>
           </select>
         </div>
         <div class="playbtns">
-          <button type="button" class="btn btn-g btn-sm" id="playBtn">&#9654; Play</button>
+          <button type="button" class="btn btn-g btn-sm" id="playBtn">▶ Play</button>
         </div>
       </div>
 
@@ -260,13 +267,13 @@
 
 <div class="mob" id="mob">
   <button type="button" class="btn btn-p" id="burnMob">Baixar</button>
-  <button type="button" class="btn btn-d hidden" id="cancelMob">&#10006;</button>
+  <button type="button" class="btn btn-d hidden" id="cancelMob">✖</button>
   <button type="button" class="btn btn-g" id="srtMob">SRT</button>
-  <button type="button" class="btn btn-g" id="moreMob">&hellip;</button>
+  <button type="button" class="btn btn-g" id="moreMob">⋯</button>
 </div>
 
 <footer class="site-footer">
-  <p>100% local · Whisper + FFmpeg · Preview com quebra de linha igual ao vídeo</p>
+  <p>100% local · Whisper + FFmpeg · Preview com quebra de linha igual ao vídeo · <a href="https://videocomlegenda.vercel.app/" style="color:var(--txt3)">videocomlegenda.vercel.app</a></p>
 </footer>
 
 <script type="module" src="script.js"></script>
