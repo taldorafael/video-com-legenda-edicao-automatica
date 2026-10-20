@@ -1,13 +1,12 @@
 {
-  "name": "editor-legendar-videos",
+  "name": "videocomlegenda",
   "version": "1.0.0",
+  "description": "Legende vídeos 100% no navegador com IA (Whisper) e FFmpeg.wasm. Estilos virais, fontes misturadas e animações.",
   "private": true,
-  "description": "Editor de legendas virais 100% local (Whisper + FFmpeg.wasm)",
   "scripts": {
     "dev": "npx serve .",
     "start": "npx serve ."
   },
-  "engines": {
-    "node": ">=18"
-  }
+  "keywords": ["legendas", "subtitles", "whisper", "ffmpeg", "capcut", "viral"],
+  "license": "MIT"
 }
