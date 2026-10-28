@@ -332,7 +332,7 @@ img,video{max-width:100%;display:block}
       </label>
     </div>
     <div class="opts-row">
-      <label class="chk"><input type="checkbox" id="gpuChk" checked/> GPU (WebGPU)</label>
+      <label class="chk"><input type="checkbox" id="gpuChk""/> GPU (WebGPU)</label>
       <label class="chk"><input type="checkbox" id="translateChk"/> Traduzir p/ inglês</label>
       <label class="chk"><input type="checkbox" id="skipChk"/> Importar .srt / .vtt</label>
       <label class="chk"><input type="checkbox" id="wmChk"/> Marca d’água</label>
@@ -619,12 +619,12 @@ else { perfBadge.textContent = 'Baixo'; perfBadge.className = 'perf-badge perf-l
 
 if (PERF === 'low') {
   $('modelSel').value = 'Xenova/whisper-tiny';
-  $('gpuChk').checked = false;
   $('maxWords').value = 3;
 } else {
   $('modelSel').value = 'Xenova/whisper-base';
   $('maxWords').value = 3;
 }
+$('gpuChk').checked = false;
 
 const FONTS = {
   inter: '"Inter",system-ui,sans-serif',
