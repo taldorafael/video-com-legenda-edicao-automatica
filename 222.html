@@ -234,24 +234,41 @@ async function decode(blob){
   if(ab.numberOfChannels>1){const c=ab.getChannelData(1),m=new Float32Array(d.length);for(let i=0;i<d.length;i++)m[i]=(d[i]+c[i])/2;d=m}
   return d}finally{ctx.close().catch(()=>{})}
 }
+const WSRC=`
+import {pipeline,env} from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.2';
+env.allowLocalModels=false;env.useBrowserCache=true;
+self.onmessage=async({data})=>{
+ try{
+  const o={progress_callback:p=>{if(p.status==='progress')postMessage({t:'dl',p:p.progress})}};
+  if(data.gpu)o.device='webgpu';
+  const tr=await pipeline('automatic-speech-recognition','Xenova/whisper-base',o);
+  postMessage({t:'loaded'});
+  const b={chunk_length_s:28,stride_length_s:5,task:'transcribe'};if(data.lang)b.language=data.lang;
+  let r;try{r=await tr(data.audio,{...b,return_timestamps:'word'})}catch(e){r=await tr(data.audio,{...b,return_timestamps:true})}
+  postMessage({t:'done',r:{text:r.text,chunks:r.chunks}});
+ }catch(e){postMessage({t:'err',m:String(e&&e.message||e)})}
+};`;
+/* roda a IA num Worker (aba nunca trava) com vigia de tempo */
+function attempt(audio,lang,gpu,dur){
+ return new Promise((res,rej)=>{
+  let w,timer;
+  try{w=new Worker(URL.createObjectURL(new Blob([WSRC],{type:'text/javascript'})),{type:'module'})}catch(e){return rej(e)}
+  const kill=e=>{clearTimeout(timer);w.terminate();rej(e)};
+  const arm=ms=>{clearTimeout(timer);timer=setTimeout(()=>kill(new Error('demorou demais')),ms)};
+  arm(gpu?45000:120000);
+  w.onmessage=({data:d})=>{
+   if(d.t==='dl'){arm(gpu?45000:90000);pb.style.width=Math.min(60,5+d.p*.55)+'%';say(ps,'Baixando IA: '+Math.round(d.p)+'%')}
+   else if(d.t==='loaded'){pb.style.width='65%';say(ps,gpu?'Transcrevendo a fala (GPU)…':'Transcrevendo a fala…');arm(gpu?Math.max(45000,dur*1500):Math.max(240000,dur*8000))}
+   else if(d.t==='done'){clearTimeout(timer);w.terminate();res(d.r)}
+   else if(d.t==='err')kill(new Error(d.m))};
+  w.onerror=e=>kill(new Error(e.message||'falha no worker'));
+  w.postMessage({audio,lang,gpu});
+ })}
 async function transcribe(audio,lang){
- const gpu=!!navigator.gpu&&!IOS,m=STRONG?'Xenova/whisper-small':'Xenova/whisper-base';
- const tries=[[m,gpu],[m,false]];if(STRONG)tries.push(['Xenova/whisper-base',false]);
- let last;
- for(const [model,g] of tries){
-  try{
-   say(ps,'Carregando IA…');pb.style.width='5%';
-   const o={progress_callback:p=>{if(p.status==='progress'){pb.style.width=Math.min(60,5+p.progress*.55)+'%';say(ps,'Baixando IA: '+Math.round(p.progress)+'%')}}};
-   if(g)o.device='webgpu';
-   const tr=await pipeline('automatic-speech-recognition',model,o);
-   say(ps,'Transcrevendo a fala…');pb.style.width='65%';
-   const base={chunk_length_s:28,stride_length_s:5,task:'transcribe'};if(lang)base.language=lang;
-   try{return await tr(audio,{...base,return_timestamps:'word'})}
-   catch(e){return await tr(audio,{...base,return_timestamps:true})}
-  }catch(e){console.warn('IA falhou',model,g,e);last=e}
- }
- throw last||new Error('IA indisponível');
-}
+ const dur=audio.length/16000,useGpu=!!navigator.gpu&&!IOS;
+ say(ps,'Carregando IA…');pb.style.width='5%';
+ if(useGpu){try{return await attempt(audio,lang,true,dur)}catch(e){console.warn('GPU falhou, usando CPU',e);say(ps,'Sem GPU, usando o modo normal…');pb.style.width='5%'}}
+ return await attempt(audio,lang,false,dur)}
 function toWords(res,dur){
  const w=[];
  for(const c of res.chunks||[]){
@@ -388,7 +405,7 @@ async function route(){
  if(!p){nav(null,true);return dash()}
  if(p.chunks)edit(p);else run(p)}
 addEventListener('popstate',route);
-$('#top-r').textContent=(STRONG?'Modo preciso':'Modo equilibrado')+' · automático';
+$('#top-r').textContent='IA automática';
 route();
 </script>
 </body>
