@@ -775,7 +775,7 @@ const STYLES = [
 ];
 
 const state = {
-  chunks: [], rawWords: [], transcriber: null,
+  chunks: [], rawWords: [], segMode: false, transcriber: null,
   activeStyle: 0, activeFilter: 'all', activeLineIdx: -1,
   showCap: true, realcar: true, italicOn: false, ftab: 'main',
   curFont: 'montserrat', curHlFont: 'montserrat',
@@ -798,23 +798,29 @@ function wordsFromChunk(c) {
   return arr.map((t,i) => ({ t, s: c.start + i*seg, e: c.start + (i+1)*seg }));
 }
 
-function groupWords(words, fallbackText, maxW, maxDur) {
+/* Agrupa palavras (word-level) em legendas curtas.
+   segMode = true → cada item é um segmento inteiro (fallback sem timestamp por palavra). */
+function groupWords(words, fallbackText, maxW, maxDur, segMode) {
   maxW = Math.max(1, Math.min(6, maxW||3));
   if (!words.length) {
     if (!String(fallbackText||'').trim()) return [];
     return [{ start:0, end:5, text:String(fallbackText).trim(), words:null }];
   }
-  const hasWordLevel = words[0] && Array.isArray(words[0].timestamp) && words[0].timestamp[0] != null;
+  const hasWordLevel = !segMode && words[0] && Array.isArray(words[0].timestamp) && words[0].timestamp[0] != null;
   if (!hasWordLevel) {
-    return words.map(w => ({
-      start: w.timestamp?.[0] ?? 0,
-      end:   w.timestamp?.[1] ?? ((w.timestamp?.[0]||0) + 2),
-      text:  String(w.text||'').trim(),
-      words: null
-    }));
+    return words.map(w => {
+      const st = w.timestamp?.[0] ?? 0;
+      const en = w.timestamp?.[1] ?? (st + 2);
+      return { start: st, end: Math.max(en, st + .3), text: String(w.text||'').trim(), words: null };
+    }).filter(c => c.text);
   }
   const out = []; let cur = [];
+  const lastEnd = g => g[g.length-1].timestamp[1] ?? g[g.length-1].timestamp[0];
   for (const w of words) {
+    // pausa longa entre palavras → fecha a legenda atual (evita legenda "esticada" sobre silêncio)
+    if (cur.length && (w.timestamp[0] - lastEnd(cur)) > 0.8) {
+      out.push(mkGroup(cur)); cur = [];
+    }
     cur.push(w);
     const et = w.timestamp[1] ?? w.timestamp[0];
     const dur = et - cur[0].timestamp[0];
@@ -1197,47 +1203,154 @@ function setAiStep(n) {
   });
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   TRANSCRIÇÃO / TRADUÇÃO — do primeiro ao último segundo
+   O áudio é dividido manualmente em janelas de 30 s com 4 s de
+   sobreposição. Cada janela é processada separadamente e os
+   tempos são somados ao deslocamento da janela, garantindo
+   cobertura total (início → fim) sem pular trechos.
+   ═══════════════════════════════════════════════════════════════ */
+const ASR_SR   = 16000; // taxa exigida pelo Whisper
+const ASR_WIN  = 30;    // janela (s)
+const ASR_OV   = 4;     // sobreposição entre janelas (s)
+const ASR_STEP = ASR_WIN - ASR_OV;
+
+async function loadTranscriber(model, useGPU) {
+  const cur = state.transcriber;
+  if (cur && cur._model===model && cur._reqGpu===useGPU) return cur;
+  const opts = { progress_callback: p => {
+    if (p.status==='progress') { setProg(pf,(p.progress||0)*0.25); setStatus(sL,`Baixando modelo: ${Math.round(p.progress||0)}%`); }
+  }};
+  if (useGPU) opts.device='webgpu';
+  let tr;
+  try {
+    tr = await pipeline('automatic-speech-recognition', model, opts);
+    tr._gpu = useGPU;
+  } catch(gpuErr) {
+    if (!useGPU) throw gpuErr;
+    setStatus(sL,'GPU indisponível, usando CPU…');
+    delete opts.device;
+    tr = await pipeline('automatic-speech-recognition', model, opts);
+    tr._gpu = false;
+  }
+  tr._model = model; tr._reqGpu = useGPU;
+  state.transcriber = tr;
+  return tr;
+}
+
+function normalizeWords(list) {
+  const w = list
+    .filter(x => x && x.timestamp && Number.isFinite(x.timestamp[0]) && String(x.text||'').trim())
+    .map(x => {
+      const s = Math.max(0, x.timestamp[0]);
+      let e = Number.isFinite(x.timestamp[1]) ? x.timestamp[1] : s + .4;
+      if (e <= s) e = s + .12;
+      if (e - s > 1.5) e = s + 1.5; // palavra não "estica" sobre silêncio
+      return { text: String(x.text).trim(), timestamp: [s, e] };
+    })
+    .sort((a,b) => a.timestamp[0] - b.timestamp[0]);
+  for (let i=0; i<w.length-1; i++) {
+    const nx = w[i+1].timestamp[0];
+    if (w[i].timestamp[1] > nx && nx > w[i].timestamp[0]) w[i].timestamp[1] = nx;
+  }
+  return w;
+}
+
 async function transcribe(audio) {
   const model = $('modelSel').value;
   const lang = $('langSel').value;
+  const translate = $('translateChk').checked;
+  const isEnOnly = /\.en$/i.test(model);
   const useGPU = $('gpuChk').checked && !!navigator.gpu && PERF !== 'low';
   setStatus(sL,'Carregando modelo IA…'); setBusy(true); setProg(pf,0); setAiStep(1);
   try {
-    if (!state.transcriber || state.transcriber._model!==model || state.transcriber._gpu!==useGPU) {
-      const opts = { progress_callback: p => {
-        if (p.status==='progress') { setProg(pf,p.progress||0); setStatus(sL,`Baixando modelo: ${Math.round(p.progress||0)}%`); }
-      }};
-      if (useGPU) opts.device='webgpu';
-      try {
-        state.transcriber = await pipeline('automatic-speech-recognition', model, opts);
-        state.transcriber._gpu = useGPU;
-      } catch(gpuErr) {
-        if (useGPU) {
-          setStatus(sL,'GPU indisponível, usando CPU…');
-          delete opts.device;
-          state.transcriber = await pipeline('automatic-speech-recognition', model, opts);
-          state.transcriber._gpu = false;
-        } else throw gpuErr;
-      }
-      state.transcriber._model = model;
-    }
-    setProg(pf,30); setStatus(sL,'Transcrevendo áudio…'); setAiStep(1);
-    const tOpts = {
-      return_timestamps: 'word', chunk_length_s:30, stride_length_s:5,
-      task: $('translateChk').checked ? 'translate' : 'transcribe'
-    };
-    if (lang) tOpts.language = lang;
-    let res;
-    try { res = await state.transcriber(audio, tOpts); }
-    catch(_) { tOpts.return_timestamps=true; res = await state.transcriber(audio, tOpts); }
+    let tr = await loadTranscriber(model, useGPU);
+    setProg(pf,25); setAiStep(1);
 
-    setAiStep(2); setProg(pf,70); setStatus(sL,'Detectando palavras…');
-    state.rawWords = (res.chunks||[]).filter(c=>c.timestamp&&c.timestamp[0]!=null);
+    const total = audio.length / ASR_SR;
+    const nWin = total <= ASR_WIN ? 1 : Math.ceil((total - ASR_WIN) / ASR_STEP) + 1;
+    let wordMode = true;           // tenta timestamp por palavra; cai para segmento se falhar
+    let gpuRetried = false;
+    const collected = [];
+
+    for (let i=0; i<nWin; i++) {
+      const winStart = i * ASR_STEP;
+      const isLast = i === nWin - 1;
+      const sA = Math.floor(winStart * ASR_SR);
+      const eA = Math.min(audio.length, Math.floor((winStart + ASR_WIN) * ASR_SR));
+      const slice = audio.subarray(sA, eA);
+
+      // região "pertencente" a esta janela (evita palavras duplicadas na sobreposição)
+      const ownStart = i === 0 ? 0 : winStart + ASR_OV/2;
+      const ownEnd   = isLast ? Infinity : winStart + ASR_WIN - ASR_OV/2;
+
+      setAiStep(i === 0 ? 1 : 2);
+      setStatus(sL, `${translate?'Traduzindo':'Transcrevendo'} ${fmtShort(winStart)} de ${fmtShort(total)} (${i+1}/${nWin})…`);
+      setProg(pf, 25 + (i / nWin) * 60);
+
+      if (slice.length < ASR_SR * 0.3) continue; // sobra irrelevante (<0,3 s)
+      // pula janela totalmente silenciosa (evita alucinações do Whisper)
+      let sum = 0; for (let k=0; k<slice.length; k+=8) sum += slice[k]*slice[k];
+      const rms = Math.sqrt(sum / (slice.length/8));
+      if (rms < 0.0004) continue;
+
+      const run = async () => {
+        const o = { return_timestamps: wordMode ? 'word' : true };
+        if (!isEnOnly) {
+          o.task = translate ? 'translate' : 'transcribe';
+          if (lang) o.language = lang;
+        }
+        return await tr(slice, o);
+      };
+
+      let res;
+      try { res = await run(); }
+      catch (e1) {
+        console.warn('Falha na janela', i, e1);
+        if (tr._gpu && !gpuRetried) {
+          // GPU falhou na inferência → recarrega em CPU e repete a mesma janela
+          gpuRetried = true;
+          setStatus(sL,'GPU falhou, recarregando em CPU…');
+          state.transcriber = null;
+          tr = await loadTranscriber(model, false);
+          tr._reqGpu = useGPU; // evita recarregar de novo na próxima execução
+          res = await run();
+        } else if (wordMode) {
+          wordMode = false; // fallback: timestamps por segmento
+          res = await run();
+        } else throw e1;
+      }
+
+      for (const c of (res.chunks || [])) {
+        if (!c || !c.timestamp || c.timestamp[0] == null) continue;
+        const txt = String(c.text||'').trim();
+        if (!txt) continue;
+        const s = c.timestamp[0] + winStart;
+        const e = (c.timestamp[1] != null ? c.timestamp[1] : c.timestamp[0] + (wordMode ? .4 : 2)) + winStart;
+        const mid = (s + e) / 2;
+        if (mid < ownStart || mid >= ownEnd) continue;
+        if (s > total + 1) continue;
+        collected.push({ text: txt, timestamp: [s, Math.min(e, total)] });
+      }
+      // se o modelo só devolveu texto sem chunks, aproveita como segmento da janela
+      if (!(res.chunks||[]).length && String(res.text||'').trim()) {
+        wordMode = false;
+        const s = Math.max(winStart, ownStart), e = Math.min(winStart + ASR_WIN, isLast ? total : ownEnd);
+        collected.push({ text: String(res.text).trim(), timestamp: [s, e] });
+      }
+    }
+
     setAiStep(3); setProg(pf,90); setStatus(sL,'Montando legendas…');
+    state.segMode = !wordMode;
+    state.rawWords = normalizeWords(collected);
+    if (!state.rawWords.length) throw new Error('Nenhuma fala detectada no áudio.');
+
     const maxW = Math.max(1, +$('maxWords').value||3);
-    state.chunks = groupWords(state.rawWords, res.text, maxW, 2.0);
+    state.chunks = groupWords(state.rawWords, '', maxW, 2.0, state.segMode);
+    if (!state.chunks.length) throw new Error('Não foi possível montar as legendas.');
     buildLines(); setProg(pf,100);
     $('waitBox').classList.add('hidden'); $('pvWrap').classList.remove('hidden');
+    try { vid.currentTime = 0; } catch(_){}
     schedRender(); setStatus(sL,'✅ Pronto! Escolha um estilo.','ok');
     saveLocal();
   } catch(err) {
@@ -1966,7 +2079,7 @@ function initPreview() {
   $('regroupBtn').addEventListener('click', ()=>{
     if(!state.rawWords.length){setStatus(sL,'Sem dados palavra-a-palavra.','err');return;}
     const maxW=Math.max(1,+$('maxWords').value||2);
-    state.chunks=groupWords(state.rawWords,'',maxW,2.0);
+    state.chunks=groupWords(state.rawWords,'',maxW,2.0,state.segMode);
     buildLines(); schedRender(); setStatus(sL,'Reagrupado!','ok'); saveLocal();
   });
   $('maxWords').addEventListener('input', ()=>{ $('maxWordsv').textContent=$('maxWords').value; });
