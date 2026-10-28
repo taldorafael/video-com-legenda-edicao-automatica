@@ -133,7 +133,7 @@ import {pipeline} from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const MOBILE=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent),IOS=/iPhone|iPad|iPod/i.test(navigator.userAgent);
 const MEM=navigator.deviceMemory||4,CORES=navigator.hardwareConcurrency||4;
-const STRONG=!MOBILE&&MEM>=8&&CORES>=6;
+const STRONG=!MOBILE&&MEM>=8&&CORES>=6; /* PC forte → small, resto → base */
 
 /* ---------- armazenamento (IndexedDB) ---------- */
 const idb=()=>new Promise((r,j)=>{const q=indexedDB.open('clipa',1);q.onupgradeneeded=()=>q.result.createObjectStore('p',{keyPath:'id'});q.onsuccess=()=>r(q.result);q.onerror=()=>j(q.error)});
@@ -142,684 +142,270 @@ const dbPut=p=>tx('readwrite',s=>s.put(p)),dbGet=id=>tx('readonly',s=>s.get(id))
 
 /* ---------- estilos ---------- */
 const STY=[
-  {n:'Hormozi',cat:'viral',css:{c:'#ffffff',h:'#f9ea03',st:'#000000',sw:0,sh:70,f:'montserrat',hf:'montserrat',up:true,w:'900',pop:1.18}},
-  {n:'Hormozi Green',cat:'viral',css:{c:'#ffffff',h:'#22e06b',st:'#000000',sw:0,sh:70,f:'montserrat',hf:'montserrat',up:true,w:'900',pop:1.18}},
-  {n:'Hormozi Box',cat:'box',css:{c:'#ffffff',h:'#ffffff',bg:'#f9ea03',hlBg:true,st:'#000000',sw:0,sh:30,f:'montserrat',hf:'montserrat',up:true,w:'900',pop:1.12}},
-  {n:'Red Box',cat:'box',css:{c:'#ffffff',h:'#ffffff',bg:'#e11d48',hlBg:true,st:'#000000',sw:2,sh:35,f:'montserrat',hf:'montserrat',up:true,w:'900',pop:1.12}},
-  {n:'Blue Box',cat:'box',css:{c:'#ffffff',h:'#ffffff',bg:'#2997ff',hlBg:true,sw:0,sh:25,f:'inter',hf:'inter',w:'800',hw:'900',pop:1.1}},
-  {n:'Black Bar',cat:'box',css:{c:'#ffffff',h:'#facc15',bg:'#0a0a0a',fullBg:true,sw:0,sh:20,f:'inter',hf:'inter',w:'700',hw:'900'}},
-  {n:'Neon Pill',cat:'box',css:{c:'#ffffff',h:'#ffffff',bg:'#ff2bd6',hlBg:true,sw:0,sh:0,f:'poppins',hf:'poppins',w:'900',glow:true,gc:'#ff2bd6',pop:1.15}},
-  {n:'Clean Pill',cat:'box',css:{c:'#ffffff',h:'#ffffff',bg:'#000000',hlBg:true,sw:0,sh:25,f:'inter',hf:'inter',w:'800',pop:1.08}},
-  {n:'Heavy Outline',cat:'outline',css:{c:'#ffffff',h:'#ffe600',st:'#000000',sw:8,sh:40,f:'impact',hf:'impact',up:true,w:'900',pop:1.2}},
-  {n:'Clean White',cat:'outline',css:{c:'#ffffff',h:'#ffffff',st:'#000000',sw:3,sh:40,f:'inter',hf:'inter',w:'800',pop:1.1}},
-  {n:'Ice',cat:'outline',css:{c:'#dff6ff',h:'#00c2ff',st:'#04324d',sw:5,sh:50,f:'montserrat',hf:'montserrat',w:'900',pop:1.15}},
-  {n:'Sunset',cat:'outline',css:{c:'#fff3d6',h:'#ff8a00',st:'#3a1200',sw:6,sh:50,f:'poppins',hf:'poppins',up:true,w:'900',pop:1.18}},
-  {n:'LOKI',cat:'outline',css:{c:'#ffffff',h:'#ffe600',st:'#000000',sw:7,sh:48,f:'impact',hf:'impact',up:true,w:'900',pop:1.2}},
-  {n:'ENZO',cat:'outline',css:{c:'#ffffff',h:'#2dd4bf',st:'#000000',sw:5,sh:48,f:'montserrat',hf:'montserrat',up:true,w:'900',pop:1.15}},
-  {n:'Neon',cat:'glow',css:{c:'#ffffff',h:'#ff2bd6',sw:0,sh:0,f:'poppins',hf:'poppins',w:'900',glow:true,gc:'#ff2bd6',pop:1.2}},
-  {n:'Clipa Glow',cat:'glow',css:{c:'#ffffff',h:'#67e8f9',sw:0,sh:0,f:'montserrat',hf:'bebas',up:true,w:'900',glow:true,gc:'#22d3ee',pop:1.18}},
-  {n:'LYRA',cat:'glow',css:{c:'#f8fafc',h:'#a78bfa',sw:0,sh:30,f:'poppins',hf:'bebas',w:'600',hw:'400',glow:true,gc:'#8b5cf6',pop:1.12}},
-  {n:'GOLD',cat:'glow',css:{c:'#e8c547',h:'#fff0a0',st:'#4a3208',sw:4,sh:50,f:'anton',hf:'anton',up:true,w:'400',glow:true,gc:'#f0c040',pop:1.15}},
-  {n:'NYX',cat:'glow',css:{c:'#00ff41',h:'#39ff14',bg:'#0d1117',fullBg:true,sw:0,sh:0,f:'inter',hf:'inter',w:'500',glow:true,gc:'#00ff41'}},
-  {n:'Inter + Bebas',cat:'mixed',css:{c:'#ffffff',h:'#22e06b',st:'#000000',sw:3,sh:50,f:'inter',hf:'bebas',up:true,w:'800',hw:'400',pop:1.15}},
-  {n:'Mont + Anton',cat:'mixed',css:{c:'#ffffff',h:'#f9ea03',st:'#000000',sw:4,sh:55,f:'montserrat',hf:'anton',up:true,w:'900',hw:'400',pop:1.18}},
-  {n:'Pop + Impact',cat:'mixed',css:{c:'#ffffff',h:'#ff0050',st:'#000000',sw:5,sh:50,f:'poppins',hf:'impact',up:true,w:'800',hw:'900',pop:1.2}},
-  {n:'Oswald + Anton',cat:'mixed',css:{c:'#ffffff',h:'#fb923c',st:'#000000',sw:4,sh:50,f:'oswald',hf:'anton',up:true,w:'700',hw:'400',pop:1.15}},
-  {n:'MIRA',cat:'clean',css:{c:'#f3eee6',h:'#ffffff',sw:0,sh:35,f:'poppins',hf:'poppins',it:true,w:'600',hw:'700',pop:1.08}},
-  {n:'PASTOR',cat:'clean',css:{c:'#efe6d5',h:'#fff9f0',sw:0,sh:28,f:'poppins',hf:'poppins',it:true,w:'500',pop:1.06}},
-  {n:'Canto',cat:'clean',css:{c:'#c4b5a0',h:'#ffffff',sw:0,sh:40,f:'inter',hf:'inter',it:true,w:'700',pop:1.08}},
-  {n:'Silk',cat:'clean',css:{c:'#7dd3c0',h:'#ffffff',sw:0,sh:50,f:'poppins',hf:'poppins',w:'800',pop:1.1}},
-  {n:'MILO',cat:'clean',css:{c:'#4ade80',h:'#86efac',sw:0,sh:30,f:'poppins',hf:'poppins',w:'800',pop:1.1}},
-  {n:'CLEAN',cat:'clean',css:{c:'#ffffff',h:'#ffffff',st:'#000000',sw:2,sh:40,f:'montserrat',hf:'montserrat',up:true,w:'900',pop:1.1}},
-  {n:'LEON',cat:'extra',css:{c:'#ffffff',h:'#ffe600',bg:'#ff4a1c',st:'#000000',sw:3,sh:40,f:'inter',hf:'inter',up:true,w:'900',pop:1.15}},
-  {n:'LAGUNA',cat:'extra',css:{c:'#ffffff',h:'#00e0ff',st:'#000000',sw:5,sh:50,f:'inter',hf:'inter',up:true,w:'900',pop:1.15}},
-  {n:'Punch',cat:'extra',css:{c:'#ffffff',h:'#ffe600',bg:'#1a6dff',st:'#000000',sw:3,sh:45,f:'anton',hf:'anton',up:true,w:'400',pop:1.18}},
-  {n:'Retro',cat:'extra',css:{c:'#ffe9c7',h:'#ff5757',st:'#5b1f00',sw:5,sh:45,f:'bebas',hf:'bebas',it:true,w:'400',pop:1.12}},
-  {n:'ELIO',cat:'extra',css:{c:'#ffffff',h:'#ff6b35',st:'#000000',sw:5,sh:48,f:'poppins',hf:'poppins',up:true,w:'800',pop:1.15}},
-  {n:'Dense',cat:'extra',css:{c:'#b8ff3d',h:'#ffffff',st:'#000000',sw:5,sh:45,f:'montserrat',hf:'montserrat',up:true,w:'900',pop:1.18}},
-  {n:'PRISM',cat:'extra',css:{c:'#e9d5ff',h:'#c084fc',st:'#000000',sw:4,sh:60,f:'poppins',hf:'poppins',w:'800',pop:1.15}},
-  {n:'Rise',cat:'extra',css:{c:'#fbbf24',h:'#ffffff',st:'#000000',sw:6,sh:55,f:'anton',hf:'anton',up:true,w:'400',pop:1.2}}
+['HORMOZI',{c:'#fff',h:'#22e06b',f:'Montserrat',w:900,up:1,sw:.0}],
+['HORMOZI 2',{c:'#fff',h:'#f9ea03',f:'Montserrat',w:900,up:1,sw:0}],
+['BEAST',{c:'#f9ea03',h:'#fff',f:'Archivo Black',w:400,up:1,sw:.14,st:'#000'}],
+['LEON',{c:'#fff',h:'#ffe600',f:'Inter',w:800,up:1,sw:.08,st:'#000',bg:'#ff4a1c'}],
+['LAGUNA',{c:'#fff',h:'#00e0ff',f:'Inter',w:800,up:1,sw:.12,st:'#000'}],
+['CLEAN',{c:'#fff',h:'#fff',f:'Montserrat',w:900,up:1,sw:.07,st:'#000'}],
+['GOLD',{c:'#e8c547',h:'#fff0a0',f:'Anton',w:400,up:1,sw:.1,st:'#4a3208'}],
+['LEVI',{c:'#fff',h:'#fff',f:'Montserrat',w:900,up:1,sw:.05,st:'#000',bg:'#e11d48'}],
+['LENA',{c:'#fff',h:'#fff',f:'Inter',w:800,sw:0,bg:'#2997ff'}],
+['TIKTOK',{c:'#fff',h:'#00f2ea',f:'Montserrat',w:900,up:1,sw:.1,st:'#000'}],
+['CAPCUT',{c:'#fff',h:'#ff0050',f:'Poppins',w:900,up:1,sw:.1,st:'#000'}],
+['RETRO',{c:'#ffe9c7',h:'#ff5757',f:'Bebas Neue',w:400,up:1,sw:.1,st:'#5b1f00',it:1}],
+['PODCAST',{c:'#fff',h:'#7cf6ff',f:'Oswald',w:700,sw:.09,st:'#000'}],
+['MIRA',{c:'#f3eee6',h:'#fff',f:'Poppins',w:700,sw:0,it:1}],
+['MONO',{c:'#fff',h:'#ffd400',f:'Inter',w:800,sw:0,bg:'#000'}],
+['ELIO',{c:'#fff',h:'#ff6b35',f:'Poppins',w:800,up:1,sw:.1,st:'#000'}]
 ];
 
-/* ---------- desenho da legenda (robusto) ---------- */
+/* ---------- desenho da legenda (preview = vídeo final) ---------- */
 function drawCap(ctx,W,H,words,act,o,pp=1){
-  const S=STY[o.si]?.css || STY[0].css;
-  const baseSize = o.size * H / 1080;
-  const gap = baseSize * 0.26;
-  const maxW = W * 0.84;
-
-  const makeFont = (size, weight, family, italic) => {
-    return `${italic ? 'italic ' : ''}${weight || '800'} ${Math.round(size)}px "${family || 'Inter'}", system-ui, sans-serif`;
-  };
-
-  const toks = words.map((w,i) => ({
-    t: S.up ? String(w.t).toUpperCase() : String(w.t),
-    on: i === act && o.real
-  }));
-
-  // quebra de linhas
-  const lines = [];
-  let cur = [], cw = 0;
-  ctx.textBaseline = 'middle';
-  ctx.textAlign = 'left';
-  ctx.lineJoin = 'round';
-  ctx.lineCap = 'round';
-
-  for (const k of toks) {
-    ctx.font = makeFont(baseSize * 1.15, S.w, S.f, S.it);
-    k.meas = ctx.measureText(k.t).width;
-    if (cw + k.meas > maxW && cur.length) {
-      lines.push({words: cur, width: cw - gap});
-      cur = []; cw = 0;
-    }
-    cur.push(k);
-    cw += k.meas + gap;
-  }
-  if (cur.length) lines.push({words: cur, width: cw - gap});
-
-  const lineH = baseSize * 1.38;
-  let y = H * (o.pos / 100) - ((lines.length - 1) * lineH) / 2;
-
-  // fullBg (faixa inteira)
-  if (S.fullBg && S.bg) {
-    const padX = baseSize * 0.55;
-    const padY = baseSize * 0.42;
-    ctx.fillStyle = S.bg;
-    for (const L of lines) {
-      const bx = (W - L.width) / 2 - padX;
-      const by = y - baseSize * 0.72;
-      const bw = L.width + padX * 2;
-      const bh = baseSize * 1.44;
-      ctx.beginPath();
-      if (ctx.roundRect) ctx.roundRect(bx, by, bw, bh, baseSize * 0.22);
-      else ctx.rect(bx, by, bw, bh);
-      ctx.fill();
-      y += lineH;
-    }
-    y = H * (o.pos / 100) - ((lines.length - 1) * lineH) / 2;
-  }
-
-  // desenha palavras
-  for (const L of lines) {
-    let x = (W - L.width) / 2;
-
-    for (const k of L.words) {
-      const on = k.on;
-      const popScale = S.pop || 1.15;
-      const sc = on ? (1 + (popScale - 1) * (1 - Math.min(1, pp * 1.35))) : 1;
-      const fs = baseSize * sc;
-
-      const useFont = on && S.hf ? S.hf : S.f;
-      const useWeight = on && S.hw ? S.hw : (S.w || '800');
-      const useItalic = !!S.it;
-
-      ctx.font = makeFont(fs, useWeight, useFont, useItalic);
-      const tw = ctx.measureText(k.t).width;
-      const dx = x + (k.meas - tw) / 2;
-
-      // background da palavra
-      if (on && S.bg && (S.hlBg || (!S.fullBg && !S.hlBg))) {
-        const px = fs * 0.22;
-        const py = fs * 0.14;
-        ctx.fillStyle = S.bg;
-        ctx.beginPath();
-        if (ctx.roundRect) ctx.roundRect(dx - px, y - fs * 0.62 - py, tw + px * 2, fs * 1.24 + py * 2, fs * 0.22);
-        else ctx.rect(dx - px, y - fs * 0.62 - py, tw + px * 2, fs * 1.24 + py * 2);
-        ctx.fill();
-      }
-
-      // stroke primeiro
-      if (S.sw && S.st && S.sw > 0) {
-        ctx.lineWidth = Math.max(1.2, fs * S.sw * 1.45);
-        ctx.strokeStyle = S.st;
-        ctx.strokeText(k.t, dx, y);
-      }
-
-      // shadow / glow
-      if (S.glow && on) {
-        ctx.shadowColor = S.gc || S.h || '#ffffff';
-        ctx.shadowBlur = fs * 0.65;
-        ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = 0;
-      } else if (S.sh && S.sh > 0) {
-        ctx.shadowColor = 'rgba(0,0,0,0.58)';
-        ctx.shadowBlur = fs * (S.sh / 650);
-        ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = fs * 0.05;
-      } else {
-        ctx.shadowColor = 'transparent';
-        ctx.shadowBlur = 0;
-        ctx.shadowOffsetY = 0;
-      }
-
-      // fill (nunca deixa preto por acidente)
-      const fillColor = on ? (o.c2 || S.h || '#ffffff') : (o.c1 || S.c || '#ffffff');
-      ctx.fillStyle = fillColor;
-      ctx.fillText(k.t, dx, y);
-
-      // limpa sombra
-      ctx.shadowColor = 'transparent';
-      ctx.shadowBlur = 0;
-      ctx.shadowOffsetY = 0;
-
-      x += k.meas + gap;
-    }
-    y += lineH;
-  }
+ const S=STY[o.si][1],sz=o.size*H/1080,fnt=(px,w)=>`${S.it?'italic ':''}${w||S.w} ${px}px "${S.f}",Inter,sans-serif`;
+ const toks=words.map((w,i)=>({t:S.up?w.t.toUpperCase():w.t,on:i===act}));
+ const gap=sz*.28,max=W*.82,lines=[];let cur=[],cw=0;
+ ctx.textBaseline='middle';ctx.textAlign='left';ctx.lineJoin='round';
+ for(const k of toks){ctx.font=fnt(sz*1.2);k.w=ctx.measureText(k.t).width;
+  if(cw+k.w>max&&cur.length){lines.push({a:cur,w:cw-gap});cur=[];cw=0}
+  cur.push(k);cw+=k.w+gap}
+ if(cur.length)lines.push({a:cur,w:cw-gap});
+ const lh=sz*1.3;let y=H*o.pos/100-((lines.length-1)*lh)/2;
+ for(const L of lines){let x=(W-L.w)/2;
+  for(const k of L.a){
+   const on=k.on&&o.real,sc=on?1.12+.2*(1-pp):1,fs=sz*sc;
+   ctx.font=fnt(fs);const tw=ctx.measureText(k.t).width,dx=x+(k.w-tw)/2;
+   if(S.bg&&on&&S.bg!=='#000'||S.bg==='#000'&&on){const px=fs*.16,py=fs*.1;ctx.fillStyle=S.bg;ctx.beginPath();
+    (ctx.roundRect?ctx.roundRect(dx-px,y-fs*.58-py,tw+px*2,fs*1.16+py*2,fs*.18):ctx.rect(dx-px,y-fs*.58-py,tw+px*2,fs*1.16+py*2));ctx.fill()}
+   if(S.sw&&S.st){ctx.lineWidth=fs*S.sw*1.6;ctx.strokeStyle=S.st;ctx.strokeText(k.t,dx,y)}
+   ctx.shadowColor='rgba(0,0,0,.55)';ctx.shadowBlur=fs*.14;ctx.shadowOffsetY=fs*.05;
+   ctx.fillStyle=on?o.c2:o.c1;ctx.fillText(k.t,dx,y);ctx.shadowColor='transparent';ctx.shadowBlur=0;ctx.shadowOffsetY=0;
+   x+=k.w+gap}
+  y+=lh}
 }
 
 /* ---------- utilidades ---------- */
-const P = {cur: null, url: null};
-const fmt = s => {s = Math.max(0, s || 0); return Math.floor(s / 60) + ':' + (s % 60).toFixed(1).padStart(4, '0')};
-const tc = (s, m = ',') => {
-  const h = String(Math.floor(s / 3600)).padStart(2, '0');
-  const mi = String(Math.floor(s % 3600 / 60)).padStart(2, '0');
-  const se = String(Math.floor(s % 60)).padStart(2, '0');
-  return `${h}:${mi}:${se}${m}${String(Math.floor(s % 1 * 1000)).padStart(3, '0')}`;
-};
-const dl = (n, b) => {
-  const u = URL.createObjectURL(b);
-  const a = Object.assign(document.createElement('a'), {href: u, download: n});
-  document.body.append(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(u), 60000);
-};
-const say = (el, m, k) => {el.textContent = m || ''; el.className = 'sub' + (k ? ' ' + k : '')};
-function show(v) {['dash', 'up', 'proc', 'ed'].forEach(x => $('#v-' + x).hidden = x !== v); window.scrollTo(0, 0)}
-function nav(id, replace) {
-  const u = location.pathname + (id ? '?id=' + id : '');
-  history[replace ? 'replaceState' : 'pushState'](null, '', u);
-}
+const P={cur:null,url:null};
+const fmt=s=>{s=Math.max(0,s||0);return Math.floor(s/60)+':'+(s%60).toFixed(1).padStart(4,'0')};
+const tc=(s,m=',')=>{const h=String(Math.floor(s/3600)).padStart(2,'0'),mi=String(Math.floor(s%3600/60)).padStart(2,'0'),se=String(Math.floor(s%60)).padStart(2,'0');return`${h}:${mi}:${se}${m}${String(Math.floor(s%1*1000)).padStart(3,'0')}`};
+const dl=(n,b)=>{const u=URL.createObjectURL(b),a=Object.assign(document.createElement('a'),{href:u,download:n});document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000)};
+const say=(el,m,k)=>{el.textContent=m||'';el.className='sub'+(k?' '+k:'')};
+function show(v){['dash','up','proc','ed'].forEach(x=>$('#v-'+x).hidden=x!==v);window.scrollTo(0,0)}
+function nav(id,replace){const u=location.pathname+(id?'?id='+id:'');history[replace?'replaceState':'pushState'](null,'',u)}
 
 /* ---------- dashboard ---------- */
-async function dash() {
-  show('dash');
-  const box = $('#list');
-  const all = (await dbAll()).sort((a, b) => b.created - a.created);
-  box.innerHTML = '';
-  if (!all.length) {
-    box.innerHTML = '<div class="empty" style="grid-column:1/-1">Nenhum vídeo ainda.<br>Clique em “Novo projeto” para começar.</div>';
-    return;
-  }
-  for (const p of all) {
-    const d = document.createElement('div');
-    d.className = 'pc';
-    d.innerHTML = `<video muted playsinline preload="metadata"></video><div>${esc(p.name)}<small>${p.chunks ? p.chunks.length + ' legendas' : 'sem legenda'} · ${new Date(p.created).toLocaleDateString('pt-BR')}</small></div><button class="x" title="Apagar">✕</button>`;
-    const v = d.querySelector('video');
-    v.src = URL.createObjectURL(p.blob) + '#t=0.5';
-    d.onclick = () => {nav(p.id); route()};
-    d.querySelector('.x').onclick = async e => {
-      e.stopPropagation();
-      if (confirm('Apagar este projeto?')) {await dbDel(p.id); dash()}
-    };
-    box.append(d);
-  }
+async function dash(){
+ show('dash');const box=$('#list'),all=(await dbAll()).sort((a,b)=>b.created-a.created);box.innerHTML='';
+ if(!all.length){box.innerHTML='<div class="empty" style="grid-column:1/-1">Nenhum vídeo ainda.<br>Clique em “Novo projeto” para começar.</div>';return}
+ for(const p of all){const d=document.createElement('div');d.className='pc';
+  d.innerHTML=`<video muted playsinline preload="metadata"></video><div>${esc(p.name)}<small>${p.chunks?p.chunks.length+' legendas':'sem legenda'} · ${new Date(p.created).toLocaleDateString('pt-BR')}</small></div><button class="x" title="Apagar">✕</button>`;
+  const v=d.querySelector('video');v.src=URL.createObjectURL(p.blob)+'#t=0.5';
+  d.onclick=()=>{nav(p.id);route()};
+  d.querySelector('.x').onclick=async e=>{e.stopPropagation();if(confirm('Apagar este projeto?')){await dbDel(p.id);dash()}};
+  box.append(d)}
 }
-const esc = t => String(t).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 /* ---------- upload ---------- */
-let picked = null;
-function upView() {show('up'); picked = null; $('#drop').hidden = false; $('#pick').hidden = true}
-function setFile(f) {
-  if (!f) return;
-  if (!/^(video|audio)\//.test(f.type) && !/\.(mp4|mov|webm|mkv|mp3|wav|m4a|ogg|aac)$/i.test(f.name))
-    return alert('Formato não suportado.');
-  picked = f;
-  $('#drop').hidden = true;
-  $('#pick').hidden = false;
-  $('#pn').textContent = f.name;
-  $('#pv').src = URL.createObjectURL(f) + '#t=0.5';
+let picked=null;
+function upView(){show('up');picked=null;$('#drop').hidden=false;$('#pick').hidden=true}
+function setFile(f){
+ if(!f)return;if(!/^(video|audio)\//.test(f.type)&&!/\.(mp4|mov|webm|mkv|mp3|wav|m4a|ogg|aac)$/i.test(f.name))return alert('Formato não suportado.');
+ picked=f;$('#drop').hidden=true;$('#pick').hidden=false;$('#pn').textContent=f.name;$('#pv').src=URL.createObjectURL(f)+'#t=0.5'}
+$('#drop').onclick=()=>$('#file').click();
+$('#file').onchange=e=>{setFile(e.target.files[0]);e.target.value=''};
+['dragenter','dragover'].forEach(ev=>$('#drop').addEventListener(ev,e=>{e.preventDefault();$('#drop').classList.add('on')}));
+['dragleave','drop'].forEach(ev=>$('#drop').addEventListener(ev,e=>{e.preventDefault();$('#drop').classList.remove('on')}));
+$('#drop').addEventListener('drop',e=>setFile(e.dataTransfer.files[0]));
+$('#swap').onclick=upView;
+$('#gen').onclick=async()=>{
+ if(!picked)return;
+ const p={id:crypto.randomUUID(),name:picked.name,blob:picked,created:Date.now(),lang:$('#lang').value,chunks:null,raw:null,
+  set:{si:0,pos:72,size:56,c1:'#ffffff',c2:STY[0][1].h,mw:3,real:true}};
+ await dbPut(p);nav(p.id);run(p)};
+$('#new').onclick=$('#new2').onclick=()=>{nav(null);upView()};
+$('#home').onclick=()=>{nav(null);dash()};
+
+/* ---------- IA: modelo e GPU automáticos ---------- */
+const pb=$('#pb'),ps=$('#ps');
+async function decode(blob){
+ const ctx=new AudioContext({sampleRate:16000});
+ try{const ab=await ctx.decodeAudioData(await blob.arrayBuffer());let d=ab.getChannelData(0);
+  if(ab.numberOfChannels>1){const c=ab.getChannelData(1),m=new Float32Array(d.length);for(let i=0;i<d.length;i++)m[i]=(d[i]+c[i])/2;d=m}
+  return d}finally{ctx.close().catch(()=>{})}
 }
-$('#drop').onclick = () => $('#file').click();
-$('#file').onchange = e => {setFile(e.target.files[0]); e.target.value = ''};
-['dragenter', 'dragover'].forEach(ev => $('#drop').addEventListener(ev, e => {e.preventDefault(); $('#drop').classList.add('on')}));
-['dragleave', 'drop'].forEach(ev => $('#drop').addEventListener(ev, e => {e.preventDefault(); $('#drop').classList.remove('on')}));
-$('#drop').addEventListener('drop', e => setFile(e.dataTransfer.files[0]));
-$('#swap').onclick = upView;
-$('#gen').onclick = async () => {
-  if (!picked) return;
-  const first = STY[0].css;
-  const p = {
-    id: crypto.randomUUID(),
-    name: picked.name,
-    blob: picked,
-    created: Date.now(),
-    lang: $('#lang').value,
-    chunks: null,
-    raw: null,
-    set: {si: 0, pos: 72, size: 56, c1: first.c || '#ffffff', c2: first.h || '#f9ea03', mw: 3, real: true}
-  };
-  await dbPut(p);
-  nav(p.id);
-  run(p);
-};
-$('#new').onclick = $('#new2').onclick = () => {nav(null); upView()};
-$('#home').onclick = () => {nav(null); dash()};
-
-/* ---------- IA ---------- */
-const pb = $('#pb'), ps = $('#ps');
-async function decode(blob) {
-  const ctx = new AudioContext({sampleRate: 16000});
-  try {
-    const ab = await ctx.decodeAudioData(await blob.arrayBuffer());
-    let d = ab.getChannelData(0);
-    if (ab.numberOfChannels > 1) {
-      const c = ab.getChannelData(1);
-      const m = new Float32Array(d.length);
-      for (let i = 0; i < d.length; i++) m[i] = (d[i] + c[i]) / 2;
-      d = m;
-    }
-    return d;
-  } finally {ctx.close().catch(() => {})}
-}
-
-const MODEL = STRONG ? 'Xenova/whisper-small' : 'Xenova/whisper-base';
-
-const WSRC = `
+const WSRC=`
 import {pipeline,env} from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.2';
 env.allowLocalModels=false;env.useBrowserCache=true;
 self.onmessage=async({data})=>{
-  try{
-    const o={progress_callback:p=>{if(p.status==='progress')postMessage({t:'dl',p:p.progress})}};
-    if(data.gpu)o.device='webgpu';
-    const tr=await pipeline('automatic-speech-recognition',data.model,o);
-    postMessage({t:'loaded'});
-    const b={chunk_length_s:28,stride_length_s:5,task:'transcribe'};
-    if(data.lang)b.language=data.lang;
-    let r;
-    try{r=await tr(data.audio,{...b,return_timestamps:'word'})}
-    catch(e){r=await tr(data.audio,{...b,return_timestamps:true})}
-    postMessage({t:'done',r:{text:r.text,chunks:r.chunks}});
-  }catch(e){postMessage({t:'err',m:String(e&&e.message||e)})}
+ try{
+  const o={progress_callback:p=>{if(p.status==='progress')postMessage({t:'dl',p:p.progress})}};
+  if(data.gpu)o.device='webgpu';
+  const tr=await pipeline('automatic-speech-recognition','Xenova/whisper-base',o);
+  postMessage({t:'loaded'});
+  const b={chunk_length_s:28,stride_length_s:5,task:'transcribe'};if(data.lang)b.language=data.lang;
+  let r;try{r=await tr(data.audio,{...b,return_timestamps:'word'})}catch(e){r=await tr(data.audio,{...b,return_timestamps:true})}
+  postMessage({t:'done',r:{text:r.text,chunks:r.chunks}});
+ }catch(e){postMessage({t:'err',m:String(e&&e.message||e)})}
 };`;
-
-function attempt(audio, lang, gpu, dur) {
-  return new Promise((res, rej) => {
-    let w, timer;
-    try {
-      w = new Worker(URL.createObjectURL(new Blob([WSRC], {type: 'text/javascript'})), {type: 'module'});
-    } catch (e) {return rej(e)}
-    const kill = e => {clearTimeout(timer); w.terminate(); rej(e)};
-    const arm = ms => {clearTimeout(timer); timer = setTimeout(() => kill(new Error('demorou demais')), ms)};
-    arm(gpu ? 50000 : 140000);
-    w.onmessage = ({data: d}) => {
-      if (d.t === 'dl') {
-        arm(gpu ? 50000 : 100000);
-        pb.style.width = Math.min(60, 5 + d.p * .55) + '%';
-        say(ps, 'Baixando IA: ' + Math.round(d.p) + '%');
-      } else if (d.t === 'loaded') {
-        pb.style.width = '65%';
-        say(ps, gpu ? 'Transcrevendo a fala (GPU)…' : 'Transcrevendo a fala…');
-        arm(gpu ? Math.max(50000, dur * 1600) : Math.max(260000, dur * 9000));
-      } else if (d.t === 'done') {
-        clearTimeout(timer);
-        w.terminate();
-        res(d.r);
-      } else if (d.t === 'err') kill(new Error(d.m));
-    };
-    w.onerror = e => kill(new Error(e.message || 'falha no worker'));
-    w.postMessage({audio, lang, gpu, model: MODEL});
-  });
+/* roda a IA num Worker (aba nunca trava) com vigia de tempo */
+function attempt(audio,lang,gpu,dur){
+ return new Promise((res,rej)=>{
+  let w,timer;
+  try{w=new Worker(URL.createObjectURL(new Blob([WSRC],{type:'text/javascript'})),{type:'module'})}catch(e){return rej(e)}
+  const kill=e=>{clearTimeout(timer);w.terminate();rej(e)};
+  const arm=ms=>{clearTimeout(timer);timer=setTimeout(()=>kill(new Error('demorou demais')),ms)};
+  arm(gpu?45000:120000);
+  w.onmessage=({data:d})=>{
+   if(d.t==='dl'){arm(gpu?45000:90000);pb.style.width=Math.min(60,5+d.p*.55)+'%';say(ps,'Baixando IA: '+Math.round(d.p)+'%')}
+   else if(d.t==='loaded'){pb.style.width='65%';say(ps,gpu?'Transcrevendo a fala (GPU)…':'Transcrevendo a fala…');arm(gpu?Math.max(45000,dur*1500):Math.max(240000,dur*8000))}
+   else if(d.t==='done'){clearTimeout(timer);w.terminate();res(d.r)}
+   else if(d.t==='err')kill(new Error(d.m))};
+  w.onerror=e=>kill(new Error(e.message||'falha no worker'));
+  w.postMessage({audio,lang,gpu});
+ })}
+async function transcribe(audio,lang){
+ const dur=audio.length/16000,useGpu=!!navigator.gpu&&!IOS;
+ say(ps,'Carregando IA…');pb.style.width='5%';
+ if(useGpu){try{return await attempt(audio,lang,true,dur)}catch(e){console.warn('GPU falhou, usando CPU',e);say(ps,'Sem GPU, usando o modo normal…');pb.style.width='5%'}}
+ return await attempt(audio,lang,false,dur)}
+function toWords(res,dur){
+ const w=[];
+ for(const c of res.chunks||[]){
+  const tk=String(c.text||'').trim().split(/\s+/).filter(Boolean);if(!tk.length||!c.timestamp)continue;
+  const s=Math.max(0,+c.timestamp[0]||0),e=Math.min(dur,Math.max(s+.2,+c.timestamp[1]||s+.5*tk.length)),d=(e-s)/tk.length;
+  tk.forEach((t,i)=>w.push({t,s:s+i*d,e:s+(i+1)*d}))}
+ return w.sort((a,b)=>a.s-b.s);
 }
+/* só cria legenda onde há fala: quebra o grupo quando há pausa > 0,55s */
+function group(ws,max){
+ const out=[];let c=[];const fl=()=>{if(c.length)out.push({s:c[0].s,e:c[c.length-1].e,w:c});c=[]};
+ for(const w of ws){if(c.length&&w.s-c[c.length-1].e>.55)fl();c.push(w);if(c.length>=max||/[.!?…]$/.test(w.t))fl()}
+ fl();return out}
 
-async function transcribe(audio, lang) {
-  const dur = audio.length / 16000;
-  const useGpu = !!navigator.gpu && !IOS;
-  say(ps, 'Carregando IA…');
-  pb.style.width = '5%';
-  if (useGpu) {
-    try {return await attempt(audio, lang, true, dur)}
-    catch (e) {
-      console.warn('GPU falhou, usando CPU', e);
-      say(ps, 'Sem GPU, usando o modo normal…');
-      pb.style.width = '5%';
-    }
-  }
-  return await attempt(audio, lang, false, dur);
-}
-
-function toWords(res, dur) {
-  const w = [];
-  for (const c of res.chunks || []) {
-    const tk = String(c.text || '').trim().split(/\s+/).filter(Boolean);
-    if (!tk.length || !c.timestamp) continue;
-    const s = Math.max(0, +c.timestamp[0] || 0);
-    const e = Math.min(dur, Math.max(s + .2, +c.timestamp[1] || s + .5 * tk.length));
-    const d = (e - s) / tk.length;
-    tk.forEach((t, i) => w.push({t, s: s + i * d, e: s + (i + 1) * d}));
-  }
-  return w.sort((a, b) => a.s - b.s);
-}
-
-function group(ws, max) {
-  const out = [];
-  let c = [];
-  const fl = () => {if (c.length) out.push({s: c[0].s, e: c[c.length - 1].e, w: c}); c = []};
-  for (const w of ws) {
-    if (c.length && w.s - c[c.length - 1].e > .55) fl();
-    c.push(w);
-    if (c.length >= max || /[.!?…]$/.test(w.t)) fl();
-  }
-  fl();
-  return out;
-}
-
-async function run(p) {
-  show('proc');
-  pb.style.width = '2%';
-  say(ps, 'Lendo o áudio…');
-  try {
-    const audio = await decode(p.blob);
-    const dur = audio.length / 16000;
-    const res = await transcribe(audio, p.lang);
-    p.raw = toWords(res, dur);
-    if (!p.raw.length) throw new Error('Nenhuma fala detectada neste vídeo.');
-    p.chunks = group(p.raw, p.set.mw);
-    await dbPut(p);
-    pb.style.width = '100%';
-    say(ps, `Legenda pronta · ${p.chunks.length} momentos de fala`);
-    setTimeout(() => {nav(p.id, true); route()}, 500);
-  } catch (e) {
-    console.error(e);
-    say(ps, 'Erro: ' + (e.message || e) + ' — volte e tente novamente.', 'err');
-  }
+async function run(p){
+ show('proc');pb.style.width='2%';say(ps,'Lendo o áudio…');
+ try{
+  const audio=await decode(p.blob),dur=audio.length/16000;
+  const res=await transcribe(audio,p.lang);
+  p.raw=toWords(res,dur);
+  if(!p.raw.length)throw new Error('Nenhuma fala detectada neste vídeo.');
+  p.chunks=group(p.raw,p.set.mw);await dbPut(p);pb.style.width='100%';
+  say(ps,`Legenda pronta · ${p.chunks.length} momentos de fala`);
+  setTimeout(()=>{nav(p.id,true);route()},500);
+ }catch(e){console.error(e);say(ps,'Erro: '+(e.message||e)+' — volte e tente novamente.','err')}
 }
 
 /* ---------- editor ---------- */
-const vid = $('#vid'), cv = $('#cv'), cx = cv.getContext('2d');
-function edit(p) {
-  P.cur = p;
-  show('ed');
-  if (P.url) URL.revokeObjectURL(P.url);
-  P.url = URL.createObjectURL(p.blob);
-  vid.src = P.url;
-  vid.load();
-  const s = p.set;
-  $('#pos').value = s.pos;
-  $('#size').value = s.size;
-  $('#c1').value = s.c1;
-  $('#c2').value = s.c2;
-  $('#mw').value = s.mw;
-  $('#hl').checked = s.real;
-  grid();
-  lines();
-  paint();
-  say($('#st'), '');
+const vid=$('#vid'),cv=$('#cv'),cx=cv.getContext('2d');
+function edit(p){
+ P.cur=p;show('ed');
+ if(P.url)URL.revokeObjectURL(P.url);P.url=URL.createObjectURL(p.blob);vid.src=P.url;vid.load();
+ const s=p.set;$('#pos').value=s.pos;$('#size').value=s.size;$('#c1').value=s.c1;$('#c2').value=s.c2;$('#mw').value=s.mw;$('#hl').checked=s.real;
+ grid();lines();paint();say($('#st'),'');
 }
-
-function grid() {
-  const g = $('#sg');
-  g.innerHTML = '';
-  STY.forEach((st, i) => {
-    const S = st.css;
-    const c = document.createElement('div');
-    c.className = 'chip' + (i === P.cur.set.si ? ' on' : '');
-    const bg = S.bg ? `background:${S.bg};padding:2px 7px;border-radius:5px;` : '';
-    const stroke = S.st && S.sw ? `-webkit-text-stroke:${Math.max(0.8, S.sw * 8)}px ${S.st};paint-order:stroke fill;` : '';
-    c.innerHTML = `<span style="${bg}font-family:'${S.f}',sans-serif;font-weight:${S.w || 800};font-style:${S.it ? 'italic' : 'normal'};color:${S.c || '#fff'};font-size:13px;${stroke}text-shadow:0 1px 4px rgba(0,0,0,.65)">${S.up ? st.n.toUpperCase() : st.n}</span>`;
-    c.onclick = () => {
-      P.cur.set.si = i;
-      P.cur.set.c1 = S.c || '#ffffff';
-      P.cur.set.c2 = S.h || S.c || '#ffffff';
-      $('#c1').value = P.cur.set.c1;
-      $('#c2').value = P.cur.set.c2;
-      grid();
-      save();
-      paint();
-    };
-    g.append(c);
-  });
+function grid(){
+ const g=$('#sg');g.innerHTML='';
+ STY.forEach(([n,S],i)=>{const c=document.createElement('div');c.className='chip'+(i===P.cur.set.si?' on':'');
+  const bg=S.bg?`background:${S.bg};padding:2px 6px;border-radius:4px;`:'';
+  c.innerHTML=`<span style="${bg}font-family:'${S.f}';font-weight:${S.w};font-style:${S.it?'italic':'normal'};color:${S.c};font-size:13px;${S.st?`-webkit-text-stroke:${Math.max(.6,S.sw*9)}px ${S.st};paint-order:stroke fill;`:''}text-shadow:0 1px 3px rgba(0,0,0,.6)">${S.up?n.toUpperCase():n}</span>`;
+  c.onclick=()=>{P.cur.set.si=i;P.cur.set.c2=S.h;P.cur.set.c1=S.c;$('#c1').value=S.c;$('#c2').value=S.h;grid();save();paint()};
+  g.append(c)})}
+function lines(){
+ const b=$('#lines');b.innerHTML='';
+ P.cur.chunks.forEach((c,i)=>{const r=document.createElement('div');r.className='ln';r.dataset.i=i;
+  r.innerHTML=`<small title="Ir para o trecho">${fmt(c.s)}–${fmt(c.e)}</small><input value="${esc(c.w.map(w=>w.t).join(' '))}"><button title="Apagar">🗑</button>`;
+  r.querySelector('small').onclick=()=>{vid.currentTime=c.s;vid.play().catch(()=>{})};
+  r.querySelector('input').onchange=e=>{const tk=e.target.value.trim().split(/\s+/).filter(Boolean);if(!tk.length)return;
+   const d=(c.e-c.s)/tk.length;c.w=tk.map((t,k)=>({t,s:c.s+k*d,e:c.s+(k+1)*d}));save();paint()};
+  r.querySelector('button').onclick=()=>{P.cur.chunks.splice(i,1);lines();save();paint()};
+  b.append(r)})}
+const save=(()=>{let t;return()=>{clearTimeout(t);t=setTimeout(()=>P.cur&&dbPut(P.cur).catch(()=>{}),400)}})();
+const opts=()=>({...P.cur.set,size:+P.cur.set.size,pos:+P.cur.set.pos});
+function at(t){const c=P.cur.chunks.find(c=>t>=c.s&&t<=c.e+.05);if(!c)return{};let a=-1;c.w.forEach((w,i)=>{if(t>=w.s)a=i});return{c,a,pp:0}}
+function paint(){
+ if(!P.cur)return;const W=vid.clientWidth,H=vid.clientHeight;if(!W)return;
+ if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H}
+ cx.clearRect(0,0,W,H);const t=vid.currentTime,{c,a}=at(t);
+ if(c){const w=c.w[a],pp=w?Math.min(1,(t-w.s)/.16):1;drawCap(cx,W,H,c.w,a,opts(),pp)}
+ $('#tm').textContent=fmt(t)+' / '+fmt(vid.duration);
+ if(!seeking)$('#seek').value=vid.duration?t/vid.duration*1000:0;
+ const idx=P.cur.chunks.indexOf(c);$$('.ln').forEach(r=>r.classList.toggle('act',+r.dataset.i===idx));
 }
+let raf=0,seeking=false;
+const loop=()=>{paint();raf=vid.paused?0:requestAnimationFrame(loop)};
+vid.addEventListener('play',()=>{$('#play').textContent='⏸';if(!raf)raf=requestAnimationFrame(loop)});
+vid.addEventListener('pause',()=>{$('#play').textContent='▶';paint()});
+['timeupdate','seeked','loadedmetadata','loadeddata'].forEach(e=>vid.addEventListener(e,paint));
+addEventListener('resize',paint);
+$('#play').onclick=()=>vid.paused?vid.play().catch(()=>{}):vid.pause();
+$('#seek').oninput=e=>{seeking=true;vid.currentTime=e.target.value/1000*(vid.duration||0)};
+$('#seek').onchange=()=>{seeking=false};
+$$('.tabs button').forEach(b=>b.onclick=()=>{$$('.tabs button').forEach(x=>x.classList.toggle('on',x===b));$('#t-s').hidden=b.dataset.t!=='s';$('#t-t').hidden=b.dataset.t!=='t'});
+[['pos','pos'],['size','size'],['c1','c1'],['c2','c2']].forEach(([id,k])=>$('#'+id).oninput=e=>{P.cur.set[k]=e.target.value;save();paint()});
+$('#hl').onchange=e=>{P.cur.set.real=e.target.checked;save();paint()};
+$('#mw').onchange=e=>{const p=P.cur;p.set.mw=+e.target.value;if(p.raw?.length){p.chunks=group(p.raw,p.set.mw);lines();save();paint()}};
+$('#srt').onclick=()=>dl('legenda.srt',new Blob([P.cur.chunks.map((c,i)=>`${i+1}\n${tc(c.s)} --> ${tc(c.e)}\n${c.w.map(w=>w.t).join(' ')}\n`).join('\n')],{type:'text/plain'}));
 
-function lines() {
-  const b = $('#lines');
-  b.innerHTML = '';
-  P.cur.chunks.forEach((c, i) => {
-    const r = document.createElement('div');
-    r.className = 'ln';
-    r.dataset.i = i;
-    r.innerHTML = `<small title="Ir para o trecho">${fmt(c.s)}–${fmt(c.e)}</small><input value="${esc(c.w.map(w => w.t).join(' '))}"><button title="Apagar">🗑</button>`;
-    r.querySelector('small').onclick = () => {vid.currentTime = c.s; vid.play().catch(() => {})};
-    r.querySelector('input').onchange = e => {
-      const tk = e.target.value.trim().split(/\s+/).filter(Boolean);
-      if (!tk.length) return;
-      const d = (c.e - c.s) / tk.length;
-      c.w = tk.map((t, k) => ({t, s: c.s + k * d, e: c.s + (k + 1) * d}));
-      save();
-      paint();
-    };
-    r.querySelector('button').onclick = () => {
-      P.cur.chunks.splice(i, 1);
-      lines();
-      save();
-      paint();
-    };
-    b.append(r);
-  });
-}
+/* ---------- exportar MP4 (FFmpeg.wasm) ---------- */
+let FF=null;
+const loadScript=src=>new Promise((r,j)=>{const s=document.createElement('script');s.src=src;s.onload=r;s.onerror=()=>j(new Error('Falha ao carregar o FFmpeg'));document.head.append(s)});
+async function ensureFF(){
+ if(FF)return FF;
+ await loadScript('https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js');
+ const {createFFmpeg,fetchFile}=window.FFmpeg;
+ const ff=createFFmpeg({log:false,corePath:'https://unpkg.com/@ffmpeg/core-st@0.11.1/dist/ffmpeg-core.js',mainName:'main'});
+ await ff.load();ff.fetch=fetchFile;FF=ff;return ff}
+$('#burn').onclick=async()=>{
+ const p=P.cur,st=$('#st'),eb=$('#eb'),btn=$('#burn');
+ if(!p?.chunks.length)return say(st,'Sem legendas para exportar.','err');
+ btn.disabled=true;vid.pause();eb.style.width='2%';
+ try{
+  await document.fonts.ready;const S=STY[p.set.si][1];
+  await Promise.all([400,700,800,900].map(w=>document.fonts.load(`${w} 40px "${S.f}"`).catch(()=>{})));
+  say(st,'Carregando FFmpeg (~25MB na 1ª vez)…');const ff=await ensureFF();
+  /* tamanho de saída: lado menor limitado, dimensões pares */
+  const vw=vid.videoWidth||1080,vh=vid.videoHeight||1920,lim=MOBILE?720:1080,k=Math.min(1,lim/Math.min(vw,vh));
+  const W=Math.max(2,Math.round(vw*k)&~1),H=Math.max(2,Math.round(vh*k)&~1);
+  /* quadros: 1 por palavra (com pop de entrada se couber no limite) */
+  const nW=p.chunks.reduce((a,c)=>a+c.w.length,0),pop=p.set.real&&nW<=55,MAX=110,fr=[];
+  for(const c of p.chunks){
+   if(p.set.real&&nW<=MAX){c.w.forEach((w,i)=>{const a=i===0?c.s:w.s,b=i<c.w.length-1?c.w[i+1].s:c.e;if(b-a<.03)return;
+     if(pop){const d=Math.min(.1,(b-a)/2);fr.push({s:a,e:a+d,c,a:i,pp:.15},{s:a+d,e:b,c,a:i,pp:1})}else fr.push({s:a,e:b,c,a:i,pp:1})})}
+   else fr.push({s:c.s,e:c.e,c,a:-1,pp:1})}
+  const names=[],o=opts(),cn=document.createElement('canvas');cn.width=W;cn.height=H;const g=cn.getContext('2d');
+  for(let i=0;i<fr.length;i++){
+   g.clearRect(0,0,W,H);drawCap(g,W,H,fr[i].c.w,fr[i].a,o,fr[i].pp);
+   const bl=await new Promise(r=>cn.toBlob(r,'image/png'));ff.FS('writeFile',`c${i}.png`,new Uint8Array(await bl.arrayBuffer()));names.push(`c${i}.png`);
+   if(i%5===0){eb.style.width=(4+i/fr.length*30)+'%';say(st,`Criando legendas ${i+1}/${fr.length}…`)}}
+  const ext=(p.name.match(/\.[a-z0-9]+$/i)||['.mp4'])[0];
+  ff.FS('writeFile','in'+ext,await ff.fetch(p.blob));
+  let f='[0:v]scale='+W+':'+H+',setsar=1[b0];',last='b0';
+  fr.forEach((x,i)=>{const nx=i===fr.length-1?'vo':'b'+(i+1);
+   f+=`[${last}][${i+1}:v]overlay=0:0:enable='between(t,${x.s.toFixed(3)},${Math.max(x.e,x.s+.04).toFixed(3)})'[${nx}];`;last=nx});
+  f=f.slice(0,-1);
+  const dur=isFinite(vid.duration)?vid.duration:3600;
+  ff.setProgress(({ratio})=>{const r=Math.min(1,Math.max(0,ratio||0));eb.style.width=(36+r*62)+'%';say(st,'Codificando MP4… '+Math.round(r*100)+'%')});
+  const args=['-y','-i','in'+ext];names.forEach(n=>args.push('-i',n));
+  args.push('-t',String(dur),'-filter_complex',f,'-map','[vo]','-map','0:a?','-c:v','libx264','-preset',MOBILE?'ultrafast':'veryfast','-crf',MOBILE?'27':'22','-pix_fmt','yuv420p','-profile:v','high','-level','4.1','-c:a','aac','-b:a','128k','-movflags','+faststart','-map_metadata','-1','out.mp4');
+  say(st,'Codificando MP4…');await ff.run(...args);
+  const out=ff.FS('readFile','out.mp4');if(!out||out.length<1000)throw new Error('Saída vazia. Tente um vídeo mais curto.');
+  const blob=new Blob([out.buffer],{type:'video/mp4'});
+  names.forEach(n=>{try{ff.FS('unlink',n)}catch(_){}});['in'+ext,'out.mp4'].forEach(n=>{try{ff.FS('unlink',n)}catch(_){}});
+  dl((p.name.replace(/\.[^.]+$/,'')||'video')+'-legendado.mp4',blob);
+  eb.style.width='100%';say(st,'✅ Vídeo MP4 pronto!','ok');
+ }catch(e){console.error(e);say(st,'Erro: '+(e.message||e),'err');eb.style.width='0'}
+ btn.disabled=false};
 
-const save = (() => {
-  let t;
-  return () => {
-    clearTimeout(t);
-    t = setTimeout(() => P.cur && dbPut(P.cur).catch(() => {}), 400);
-  };
-})();
-const opts = () => ({...P.cur.set, size: +P.cur.set.size, pos: +P.cur.set.pos});
-
-function at(t) {
-  const c = P.cur.chunks.find(c => t >= c.s && t <= c.e + .05);
-  if (!c) return {};
-  let a = -1;
-  c.w.forEach((w, i) => {if (t >= w.s) a = i});
-  return {c, a};
-}
-
-function paint() {
-  if (!P.cur) return;
-  const W = vid.clientWidth, H = vid.clientHeight;
-  if (!W) return;
-  if (cv.width !== W || cv.height !== H) {cv.width = W; cv.height = H}
-  cx.clearRect(0, 0, W, H);
-  const t = vid.currentTime;
-  const {c, a} = at(t);
-  if (c) {
-    const w = c.w[a];
-    const pp = w ? Math.min(1, (t - w.s) / 0.14) : 1;
-    drawCap(cx, W, H, c.w, a, opts(), pp);
-  }
-  $('#tm').textContent = fmt(t) + ' / ' + fmt(vid.duration);
-  if (!seeking) $('#seek').value = vid.duration ? t / vid.duration * 1000 : 0;
-  const idx = P.cur.chunks.indexOf(c);
-  $$('.ln').forEach(r => r.classList.toggle('act', +r.dataset.i === idx));
-}
-
-let raf = 0, seeking = false;
-const loop = () => {paint(); raf = vid.paused ? 0 : requestAnimationFrame(loop)};
-vid.addEventListener('play', () => {$('#play').textContent = '⏸'; if (!raf) raf = requestAnimationFrame(loop)});
-vid.addEventListener('pause', () => {$('#play').textContent = '▶'; paint()});
-['timeupdate', 'seeked', 'loadedmetadata', 'loadeddata'].forEach(e => vid.addEventListener(e, paint));
-addEventListener('resize', paint);
-$('#play').onclick = () => vid.paused ? vid.play().catch(() => {}) : vid.pause();
-$('#seek').oninput = e => {seeking = true; vid.currentTime = e.target.value / 1000 * (vid.duration || 0)};
-$('#seek').onchange = () => {seeking = false};
-$$('.tabs button').forEach(b => b.onclick = () => {
-  $$('.tabs button').forEach(x => x.classList.toggle('on', x === b));
-  $('#t-s').hidden = b.dataset.t !== 's';
-  $('#t-t').hidden = b.dataset.t !== 't';
-});
-[['pos', 'pos'], ['size', 'size'], ['c1', 'c1'], ['c2', 'c2']].forEach(([id, k]) => {
-  $('#' + id).oninput = e => {P.cur.set[k] = e.target.value; save(); paint()};
-});
-$('#hl').onchange = e => {P.cur.set.real = e.target.checked; save(); paint()};
-$('#mw').onchange = e => {
-  const p = P.cur;
-  p.set.mw = +e.target.value;
-  if (p.raw?.length) {
-    p.chunks = group(p.raw, p.set.mw);
-    lines();
-    save();
-    paint();
-  }
-};
-$('#srt').onclick = () => dl('legenda.srt', new Blob([
-  P.cur.chunks.map((c, i) => `${i + 1}\n${tc(c.s)} --> ${tc(c.e)}\n${c.w.map(w => w.t).join(' ')}\n`).join('\n')
-], {type: 'text/plain'}));
-
-/* ---------- exportar MP4 ---------- */
-let FF = null;
-const loadScript = src => new Promise((r, j) => {
-  const s = document.createElement('script');
-  s.src = src;
-  s.onload = r;
-  s.onerror = () => j(new Error('Falha ao carregar o FFmpeg'));
-  document.head.append(s);
-});
-async function ensureFF() {
-  if (FF) return FF;
-  await loadScript('https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js');
-  const {createFFmpeg, fetchFile} = window.FFmpeg;
-  const ff = createFFmpeg({
-    log: false,
-    corePath: 'https://unpkg.com/@ffmpeg/core-st@0.11.1/dist/ffmpeg-core.js',
-    mainName: 'main'
-  });
-  await ff.load();
-  ff.fetch = fetchFile;
-  FF = ff;
-  return ff;
-}
-
-$('#burn').onclick = async () => {
-  const p = P.cur, st = $('#st'), eb = $('#eb'), btn = $('#burn');
-  if (!p?.chunks.length) return say(st, 'Sem legendas para exportar.', 'err');
-  btn.disabled = true;
-  vid.pause();
-  eb.style.width = '2%';
-  try {
-    await document.fonts.ready;
-    const S = STY[p.set.si].css;
-    const fontsToLoad = [S.f, S.hf].filter(Boolean);
-    for (const f of fontsToLoad) {
-      await Promise.all([400, 600, 700, 800, 900].map(w =>
-        document.fonts.load(`${w} 48px "${f}"`).catch(() => {})
-      ));
-    }
-
-    say(st, 'Carregando FFmpeg (~25MB na 1ª vez)…');
-    const ff = await ensureFF();
-
-    const vw = vid.videoWidth || 1080;
-    const vh = vid.videoHeight || 1920;
-    const lim = MOBILE ? 720 : 1080;
-    const k = Math.min(1, lim / Math.min(vw, vh));
-    const W = Math.max(2, Math.round(vw * k) & ~1);
-    const H = Math.max(2, Math.round(vh * k) & ~1);
-
-    const nW = p.chunks.reduce((a, c) => a + c.w.length, 0);
-    const pop = p.set.real && nW <= 60;
-    const MAX = 120;
-    const fr = [];
-
-    for (const c of p.chunks) {
-      if (p.set.real && nW <= MAX) {
-        c.w.forEach((w, i) => {
-          const a = i === 0 ? c.s : w.s;
-          const b = i < c.w.length - 1 ? c.w[i + 1].s : c.e;
-          if (b - a < .03) return;
-          if (pop) {
-            const d = Math.min(0.09, (b - a) / 2);
-            fr.push({s: a, e: a + d, c, a: i, pp: 0.12}, {s: a + d, e: b, c, a: i, pp: 1});
-          } else {
-            fr.push({s: a, e: b, c, a: i, pp: 1});
-          }
-        });
-      } else {
-        fr.push({s: c.s, e: c.e, c, a: -1, pp: 1});
-      }
-    }
-
-    const names = [], o = opts();
-    const cn = document.createElement('canvas');
-    cn.width = W; cn.height = H;
-    const g = cn.getContext('2d');
-
-    for (let i = 0; i < fr.length; i++) {
-      g.clearRect(0, 0, W, H);
-      drawCap(g, W, H, fr[i].c.w, fr[i].a, o, fr[i].pp);
-      const bl = await new Promise(r => cn.toBlob(r, 'image/png'));
-      ff.FS('writeFile', `c${i}.png`, new Uint8Array(await bl.arrayBuffer()));
-      names.push(`c${i}.png`);
-      if (i % 4 === 0) {
-        eb.style.width = (4 + i / fr.length * 30) + '%';
-        say(st, `Criando legendas ${i + 1}/${fr.length}…`);
-      }
-    }
-
-    const ext = (p.name.match(/\.[a-z0-9]+$/i) || ['.mp4'])[0];
-    ff.FS('writeFile', 'in' + ext, await ff.fetch(p.blob));
-
-    let f = `[0:v]scale=${W}:${H},setsar=1[b0];`;
-    let last = 'b0';
-    fr.forEach((x, i) => {
-      const nx = i === fr.length - 1 ? 'vo' : 'b' + (i + 1);
-      f += `[${last}][${i + 1}:v]overlay=0:0:enable='between(t,${x.s.toFixed(3)},${Math.max(x.e, x.s + .04).toFixed(3)})'[${nx}];`;
-      last = nx;
-    });
-    f = f.slice(0, -1);
-
-    const dur = isFinite(vid.duration) ? vid.duration : 3600;
-    ff.setProgress(({ratio}) => {
-      const r = Math.min(1, Math.max(0, ratio || 0));
-      eb.style.width = (36 + r * 62) + '%';
-      say(st, 'Codificando MP4… ' + Math.round(r * 100) + '%');
-    });
-
-    const args = ['-y', '-i', 'in' + ext];
-    names.forEach(n => args.push('-i', n));
-    args.push(
-      '-t', String(dur),
-      '-filter_complex', f,
-      '-map', '[vo]', '-map', '0:a?',
-      '-c:v', 'libx264', '-preset', MOBILE ? 'ultrafast' : 'veryfast',
-      '-crf', MOBILE ? '27' : '22',
-      '-pix_fmt', 'yuv420p', '-profile:v', 'high', '-level', '4.1',
-      '-c:a', 'aac', '-b:a', '128k',
-      '-movflags', '+faststart', '-map_metadata', '-1',
-      'out.mp4'
-    );
-
-    say(st, 'Codificando MP4…');
-    await ff.run(...args);
-
-    const out = ff.FS('readFile', 'out.mp4');
-    if (!out || out.length < 1000) throw new Error('Saída vazia. Tente um vídeo mais curto.');
-    const blob = new Blob([out.buffer], {type: 'video/mp4'});
-
-    names.forEach(n => {try {ff.FS('unlink', n)} catch (_) {}});
-    ['in' + ext, 'out.mp4'].forEach(n => {try {ff.FS('unlink', n)} catch (_) {}});
-
-    dl((p.name.replace(/\.[^.]+$/, '') || 'video') + '-legendado.mp4', blob);
-    eb.style.width = '100%';
-    say(st, '✅ Vídeo MP4 pronto!', 'ok');
-  } catch (e) {
-    console.error(e);
-    say(st, 'Erro: ' + (e.message || e), 'err');
-    eb.style.width = '0';
-  }
-  btn.disabled = false;
-};
-
-/* ---------- rotas ---------- */
-async function route() {
-  const id = new URLSearchParams(location.search).get('id');
-  if (!id) return dash();
-  const p = await dbGet(id).catch(() => null);
-  if (!p) {nav(null, true); return dash()}
-  if (p.chunks) edit(p);
-  else run(p);
-}
-addEventListener('popstate', route);
-$('#top-r').textContent = 'IA automática';
+/* ---------- rotas (?id=...) ---------- */
+async function route(){
+ const id=new URLSearchParams(location.search).get('id');
+ if(!id)return dash();
+ const p=await dbGet(id).catch(()=>null);
+ if(!p){nav(null,true);return dash()}
+ if(p.chunks)edit(p);else run(p)}
+addEventListener('popstate',route);
+$('#top-r').textContent='IA automática';
 route();
 </script>
 </body>
