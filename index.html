@@ -150,7 +150,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 
 <header class="top">
   <div class="brand"><span class="mark">C</span>Clipa</div>
-  <span class="pill">100% local · grátis</span>
+  <span class="pill">Edição local · autosave</span>
 </header>
 
 <!-- ============ HOME ============ -->
@@ -213,7 +213,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
     <div class="player">
       <button class="ib" id="play" aria-label="Reproduzir">▶</button>
       <input type="range" id="seek" min="0" max="1000" value="0" aria-label="Posição">
-      <span id="time" class="time">0:00</span>
+      <span id="time" class="time">0:00 / 0:00</span>
       <select id="speed" aria-label="Velocidade"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option><option value="2">2×</option></select>
       <button class="ib" id="eye" title="Mostrar ou ocultar legenda" aria-label="Legenda">👁</button>
       <button class="ib" id="safeBtn" title="Área segura" aria-label="Área segura">📱</button>
@@ -276,7 +276,10 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 
   <div class="actions">
     <div class="expbar" id="expbar" hidden><div class="bar"><i id="expFill"></i></div><span id="expMsg">Gravando…</span></div>
-    <button class="btn pri" id="exportBtn">Baixar vídeo com legenda</button>
+    <button class="btn" id="saveProjectBtn">Salvar projeto</button>
+    <button class="btn" id="openProjectBtn">Abrir projeto</button>
+    <input type="file" id="projectFile" accept=".clipa,.json,application/json" hidden>
+    <button class="btn pri" id="exportBtn">Exportar MP4 (original)</button>
     <button class="btn danger" id="cancelBtn" hidden>Cancelar</button>
     <button class="btn" id="srtBtn">.SRT</button>
     <button class="btn" id="vttBtn">.VTT</button>
@@ -355,7 +358,7 @@ const LAYOUT = { size: 7, pos: 74, maxWords: 3, anim: 'pop' };
 const S = { ...DEF, ...PRESETS[0][1], ...LAYOUT, show: true };
 let presetIdx = 0;
 
-const state = { file: null, lines: [], dur: 0, vw: 1080, vh: 1920, hasVideo: true, busy: false, cancel: false, actx: null, asrc: null, act: -2 };
+const state = { file: null, fileUrl: '', lines: [], dur: 0, vw: 1080, vh: 1920, hasVideo: true, busy: false, cancel: false, actx: null, asrc: null, act: -2, lastPosition: 0, exportFrame: 0, saveStatus: 'Salvo' };
 
 /* ================= Desenho das legendas (preview e exportação) ================= */
 function rr(c, x, y, w, h, r) {
@@ -470,7 +473,7 @@ function draw() {
   updateActive();
   if (!seeking) {
     $('seek').value = state.dur ? (vid.currentTime / state.dur) * 1000 : 0;
-    $('time').textContent = fmt(vid.currentTime);
+    $('time').textContent = `${fmt(vid.currentTime)} / ${fmt(state.dur)}`;
   }
 }
 let queued = false;
@@ -480,6 +483,7 @@ function loop() { draw(); if (!vid.paused && !vid.ended) requestAnimationFrame(l
 vid.addEventListener('play', () => { $('play').textContent = '⏸'; if (!playing) { playing = true; requestAnimationFrame(loop); } });
 ['pause', 'ended'].forEach(e => vid.addEventListener(e, () => { $('play').textContent = '▶'; redraw(); }));
 ['seeked', 'timeupdate', 'loadeddata'].forEach(e => vid.addEventListener(e, redraw));
+vid.addEventListener('timeupdate',()=>{state.lastPosition=vid.currentTime;if(!state.busy)save();});
 addEventListener('resize', fitStage);
 new ResizeObserver(fitStage).observe($('holder'));
 
@@ -677,17 +681,36 @@ $('tabs').addEventListener('click', e => {
   ['styles', 'adjust', 'lines'].forEach(t => $('t-' + t).hidden = t !== b.dataset.t);
 });
 
-/* ================= Persistência ================= */
-const fkey = f => f ? `${f.name}|${f.size}` : '';
+/* ================= Persistência e projetos portáteis ================= */
+const fkey = f => f ? `${f.name}|${f.size}|${f.lastModified || 0}` : '';
 let saveT;
-function save() {
-  clearTimeout(saveT);
-  saveT = setTimeout(() => {
-    try { localStorage.setItem('clipa_proj', JSON.stringify({ key: fkey(state.file), S, presetIdx, lines: state.lines })); } catch (_) {}
-  }, 400);
+function projectData() {
+  return { app:'Clipa', version:2, savedAt:new Date().toISOString(), source: state.file ? {name:state.file.name,size:state.file.size,lastModified:state.file.lastModified||0,duration:state.dur,width:state.vw,height:state.vh} : null,
+    position: Number(vid.currentTime || state.lastPosition || 0), settings:{...S}, presetIdx, lines:state.lines.map(l=>({s:+l.s,e:+l.e,words:l.words.map(w=>({t:String(w.t),s:+w.s,e:+w.e}))})) };
 }
-function loadSaved() { try { return JSON.parse(localStorage.getItem('clipa_proj')); } catch (_) { return null; } }
-
+function persistLocal() {
+  try { localStorage.setItem('clipa_project_v2', JSON.stringify(projectData())); state.saveStatus='Salvo'; }
+  catch(e) { state.saveStatus='Não foi possível salvar localmente'; console.warn('Clipa autosave:',e); }
+}
+function save() {
+  clearTimeout(saveT); state.saveStatus='Salvando…';
+  saveT=setTimeout(persistLocal,350);
+}
+function loadSaved() { try { return JSON.parse(localStorage.getItem('clipa_project_v2') || localStorage.getItem('clipa_proj')); } catch (_) { return null; } }
+function normalizeProject(p) {
+  if (!p || !Array.isArray(p.lines)) throw new Error('Arquivo de projeto inválido.');
+  const lines=p.lines.map(l=>{ const words=Array.isArray(l.words)?l.words.map(w=>({t:String(w.t??''),s:Number(w.s)||0,e:Number(w.e)||0})).filter(w=>w.t.trim()):[];
+    const s=Number(l.s)||0,e=Math.max(Number(l.e)||s+.1,s+.05); return {s,e,words:words.length?words:evenWords(String(l.text||'').split(/\s+/).filter(Boolean),s,e)}; }).filter(l=>l.words.length);
+  return {lines,settings:p.settings||p.S||{},presetIdx:Number(p.presetIdx)||0,position:Math.max(0,Number(p.position)||0),source:p.source||null};
+}
+function exportProject() {
+  if (!state.lines.length && !state.file) return toast('Abra um vídeo ou crie legendas antes de salvar.',true);
+  const blob=new Blob([JSON.stringify(projectData(),null,2)],{type:'application/json'});
+  download('projeto-clipa.clipa',blob); persistLocal(); toast('Projeto salvo. O vídeo original não é incluído; mantenha o arquivo de mídia.');
+}
+$('saveProjectBtn').onclick=exportProject;
+$('openProjectBtn').onclick=()=>$('projectFile').click();
+$('projectFile').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;try{const p=normalizeProject(JSON.parse(await f.text()));Object.assign(S,p.settings);presetIdx=p.presetIdx;state.lines=p.lines;state.lastPosition=p.position;reindex();renderPresets();syncUI();buildList();redraw();save();if(state.file&&state.dur)vid.currentTime=Math.min(p.position,state.dur);toast('Edição recuperada. Selecione o vídeo original caso ainda não esteja aberto.');}catch(err){toast('Não foi possível abrir o projeto: '+err.message,true);}};
 /* ================= Transcrição (Web Worker) ================= */
 const WORKER = `
 import {pipeline,env} from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.2';
@@ -753,36 +776,30 @@ function runWhisper(audio) {
 async function openFile(f) {
   if (!f) return;
   if (!/^(video|audio)\//.test(f.type) && !/\.(mp4|mov|webm|mkv|mp3|wav|m4a|ogg|aac)$/i.test(f.name)) return toast('Formato não suportado.', true);
-  state.file = f;
-  if (vid.src) URL.revokeObjectURL(vid.src);
-  vid.src = URL.createObjectURL(f);
-  setLoad(null, 'Lendo arquivo…');
-  await new Promise(r => { vid.onloadedmetadata = r; vid.onerror = r; setTimeout(r, 5000); vid.load(); });
-  state.dur = isFinite(vid.duration) ? vid.duration : 0;
-  state.hasVideo = vid.videoWidth > 0;
-  state.vw = vid.videoWidth || 1080; state.vh = vid.videoHeight || 1920;
-  stage.classList.toggle('audio', !state.hasVideo);
+  if(state.busy) return toast('Aguarde a exportação terminar.',true);
+  state.file=f;
+  if(state.fileUrl) URL.revokeObjectURL(state.fileUrl);
+  state.fileUrl=URL.createObjectURL(f); vid.src=state.fileUrl;
+  setLoad(null,'Lendo arquivo…');
   try {
-    const saved = loadSaved();
-    if (saved && saved.key === fkey(f) && saved.lines?.length && confirm('Encontrei um projeto salvo deste arquivo. Restaurar?')) {
-      Object.assign(S, saved.S); presetIdx = saved.presetIdx || 0; state.lines = saved.lines;
-    } else if (!$('noai').checked) {
-      setLoad(null, 'Extraindo áudio…');
-      const audio = await decodeAudio(f);
-      const r = await runWhisper(audio);
-      const words = toWords(r.chunks, state.dur);
-      if (!words.length) throw new Error('Nenhuma fala foi detectada.');
-      state.lines = group(words, S.maxWords);
-    } else state.lines = [];
+    await new Promise((resolve,reject)=>{const ok=()=>{clean();resolve();},bad=()=>{clean();reject(new Error('Não foi possível abrir este arquivo de mídia.'));},timer=setTimeout(()=>{clean();reject(new Error('Tempo esgotado ao abrir o vídeo.'));},20000);function clean(){clearTimeout(timer);vid.removeEventListener('loadedmetadata',ok);vid.removeEventListener('error',bad);}vid.addEventListener('loadedmetadata',ok,{once:true});vid.addEventListener('error',bad,{once:true});vid.load();});
+    state.dur=Number.isFinite(vid.duration)?vid.duration:0;state.hasVideo=vid.videoWidth>0;state.vw=vid.videoWidth||1080;state.vh=vid.videoHeight||1920;stage.classList.toggle('audio',!state.hasVideo);
+    const saved=loadSaved();
+    const matches=saved && (saved.key===fkey(f) || saved.key===`${f.name}|${f.size}` || (saved.source && saved.source.name===f.name && saved.source.size===f.size));
+    if(matches && Array.isArray(saved.lines) && confirm('Encontrei uma edição salva deste arquivo. Recuperar agora?')) {
+      const p=normalizeProject(saved);Object.assign(S,p.settings);presetIdx=p.presetIdx;state.lines=p.lines;state.lastPosition=p.position;
+    } else if(!$('noai').checked) {
+      setLoad(null,'Extraindo áudio para transcrição…');
+      if(f.size>800*1024*1024) throw new Error('Arquivo muito grande para transcrição local segura. Importe um .SRT/.VTT ou use um vídeo menor.');
+      const audio=await decodeAudio(f);const r=await runWhisper(audio);const words=toWords(r.chunks,state.dur);
+      if(!words.length) throw new Error('Nenhuma fala foi detectada.');state.lines=group(words,S.maxWords);
+    } else state.lines=[];
     enterEditor();
-  } catch (err) {
-    console.error(err);
-    $('loader').hidden = true;
-    toast('Erro: ' + (err.message || err), true);
-  }
+    if(state.lastPosition>0) { try{vid.currentTime=Math.min(state.lastPosition,state.dur);}catch(_){} }
+  } catch(err){console.error(err);$('loader').hidden=true;toast('Erro: '+(err.message||err),true);}
 }
 function enterEditor() {
-  $('home').hidden = true; $('editor').hidden = false;
+  $('loader').hidden = true; $('home').hidden = true; $('editor').hidden = false;
   reindex(); renderPresets(); syncUI(); buildList();
   requestAnimationFrame(() => { fitStage(); ensureFonts(); });
   save();
@@ -811,77 +828,76 @@ $('newBtn').onclick = () => { if (confirm('Descartar este projeto e começar out
 function setExporting(on) {
   state.busy = on;
   $('exportBtn').disabled = on; $('cancelBtn').hidden = !on; $('expbar').hidden = !on;
-  ['srtBtn', 'vttBtn', 'newBtn'].forEach(id => $(id).disabled = on);
+  ['srtBtn', 'vttBtn', 'newBtn','saveProjectBtn','openProjectBtn'].forEach(id => $(id).disabled = on);
   if (!on) $('expFill').style.width = '0';
 }
-const seekTo = t => new Promise(r => {
-  if (Math.abs(vid.currentTime - t) < .01) return r();
-  const h = () => { vid.removeEventListener('seeked', h); r(); };
-  vid.addEventListener('seeked', h); vid.currentTime = t; setTimeout(r, 1500);
-});
-$('cancelBtn').onclick = () => { state.cancel = true; };
-$('exportBtn').onclick = async () => {
-  if (state.busy) return;
-  if (!state.lines.length) return toast('Sem legendas para gravar.', true);
-  if (!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream) return toast('Este navegador não grava vídeo. Use Chrome, Edge ou Safari atualizado.', true);
-  setExporting(true); state.cancel = false;
-  const oldRate = vid.playbackRate;
-  try {
+function seekTo(t) {
+  return new Promise((resolve,reject)=>{
+    if(Math.abs(vid.currentTime-t)<0.025)return resolve();
+    const timer=setTimeout(()=>{cleanup();reject(new Error('O vídeo não conseguiu posicionar no tempo solicitado.'));},10000);
+    const done=()=>{cleanup();resolve();};function cleanup(){clearTimeout(timer);vid.removeEventListener('seeked',done);vid.removeEventListener('error',fail);}function fail(){cleanup();reject(new Error('Falha ao buscar quadro do vídeo.'));}
+    vid.addEventListener('seeked',done,{once:true});vid.addEventListener('error',fail,{once:true});vid.currentTime=t;
+  });
+}
+$('cancelBtn').onclick=()=>{state.cancel=true;$('expMsg').textContent='Cancelando…';};
+$('exportBtn').onclick=async()=>{
+  if(state.busy)return;
+  if(!state.file||!state.dur)return toast('Abra um vídeo antes de exportar.',true);
+  if(!state.lines.length)return toast('Adicione ou importe legendas antes de exportar.',true);
+  if(!window.MediaRecorder||!HTMLCanvasElement.prototype.captureStream)return toast('Este navegador não oferece gravação de vídeo por canvas.',true);
+  const mimeCandidates=['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4;codecs=avc1','video/mp4'];
+  const mime=mimeCandidates.find(m=>MediaRecorder.isTypeSupported(m));
+  if(!mime)return toast('Este navegador não consegue codificar MP4 diretamente. Use uma versão atualizada do Safari ou outro navegador com MediaRecorder MP4; o Clipa não vai salvar WebM com extensão .mp4.',true);
+  setExporting(true);state.cancel=false;
+  const originalTime=vid.currentTime,originalRate=vid.playbackRate,wasPlaying=!vid.paused;
+  let stream=null,rec=null,raf=0,sourceConnected=false,parts=[],resolveStop;
+  try{
     await ensureFonts();
-    const sc = Math.min(1, 1920 / Math.max(state.vw, state.vh));
-    const W = Math.max(2, Math.round(state.vw * sc / 2) * 2), H = Math.max(2, Math.round(state.vh * sc / 2) * 2);
-    const oc = document.createElement('canvas'); oc.width = W; oc.height = H;
-    const o = oc.getContext('2d');
-    const AC = window.AudioContext || window.webkitAudioContext;
-    const actx = state.actx || (state.actx = new AC());
-    if (!state.asrc) state.asrc = actx.createMediaElementSource(vid);
-    const dest = actx.createMediaStreamDestination();
-    try { state.asrc.disconnect(); } catch (_) {}
-    state.asrc.connect(dest);
-    if (actx.state === 'suspended') await actx.resume();
-    const stream = oc.captureStream(30);
-    dest.stream.getAudioTracks().forEach(t => stream.addTrack(t));
-    const mime = ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find(m => MediaRecorder.isTypeSupported(m)) || '';
-    const rec = new MediaRecorder(stream, { ...(mime ? { mimeType: mime } : {}), videoBitsPerSecond: 8e6 });
-    const parts = []; rec.ondataavailable = e => e.data && e.data.size && parts.push(e.data);
-    const stopped = new Promise(r => rec.onstop = r);
-    vid.pause(); vid.playbackRate = 1; await seekTo(0);
-    $('expMsg').textContent = 'Gravando… mantenha esta aba aberta';
-    rec.start(500);
+    const W=Math.max(2,state.vw+(state.vw%2)),H=Math.max(2,state.vh+(state.vh%2));
+    const canvas=document.createElement('canvas');canvas.width=W;canvas.height=H;
+    const ctx=canvas.getContext('2d',{alpha:false,desynchronized:true});if(!ctx)throw new Error('Não foi possível criar o canvas de exportação.');
+    const canvasStream=canvas.captureStream(30);stream=canvasStream;
+    const AC=window.AudioContext||window.webkitAudioContext;if(!AC)throw new Error('Áudio não suportado neste navegador.');
+    const actx=state.actx||(state.actx=new AC());if(!state.asrc)state.asrc=actx.createMediaElementSource(vid);
+    const dest=actx.createMediaStreamDestination();try{state.asrc.disconnect();}catch(_){}
+    state.asrc.connect(dest);sourceConnected=true;state.asrc.connect(actx.destination);
+    if(actx.state==='suspended')await actx.resume();
+    for(const track of dest.stream.getAudioTracks())stream.addTrack(track);
+    const pixels=W*H,videoBps=Math.min(45000000,Math.max(12000000,Math.round(pixels*30*.16)));
+    rec=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:videoBps,audioBitsPerSecond:192000});
+    rec.ondataavailable=e=>{if(e.data&&e.data.size)parts.push(e.data);};
+    const stopped=new Promise((resolve,reject)=>{resolveStop=resolve;rec.onstop=resolve;rec.onerror=e=>reject(e.error||new Error('Erro durante a gravação.'));});
+    vid.pause();vid.playbackRate=1;await seekTo(0);
+    const paint=()=>{ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);if(state.hasVideo)ctx.drawImage(vid,0,0,W,H);drawCaps(ctx,W,H,vid.currentTime,S);};
+    paint();
+    rec.start(1000);
+    $('expMsg').textContent='Preparando gravação MP4…';
     await vid.play();
-    await new Promise(res => {
-      const tick = () => {
-        if (state.cancel || vid.ended) return res();
-        o.fillStyle = '#000'; o.fillRect(0, 0, W, H);
-        if (state.hasVideo) o.drawImage(vid, 0, 0, W, H);
-        drawCaps(o, W, H, vid.currentTime, S);
-        const p = state.dur ? vid.currentTime / state.dur : 0;
-        $('expFill').style.width = (p * 100).toFixed(1) + '%';
-        $('expMsg').textContent = `Gravando… ${Math.round(p * 100)}%`;
-        requestAnimationFrame(tick);
-      };
-      tick();
+    await new Promise((resolve,reject)=>{
+      let done=false;const finish=()=>{if(done)return;done=true;cancelAnimationFrame(raf);resolve();};
+      const fail=()=>{if(done)return;done=true;cancelAnimationFrame(raf);reject(new Error('A reprodução foi interrompida inesperadamente.'));};
+      const frame=()=>{if(done)return;if(state.cancel||vid.ended||vid.currentTime>=state.dur-.035){paint();finish();return;}paint();const pct=clamp(vid.currentTime/state.dur*100,0,100);$('expFill').style.width=pct.toFixed(1)+'%';$('expMsg').textContent=`Gravando MP4 · ${Math.floor(pct)}% · ${fmt(vid.currentTime)} / ${fmt(state.dur)}`;raf=requestAnimationFrame(frame);};
+      vid.addEventListener('error',fail,{once:true});raf=requestAnimationFrame(frame);
     });
-    vid.pause();
-    if (rec.state !== 'inactive') rec.stop();
-    await stopped;
-    if (state.cancel) toast('Exportação cancelada.');
-    else {
-      const blob = new Blob(parts, { type: mime.split(';')[0] || 'video/webm' });
-      if (blob.size < 1000) throw new Error('O arquivo saiu vazio. Tente um vídeo menor.');
-      download('video-com-legenda.' + (mime.includes('mp4') ? 'mp4' : 'webm'), blob);
-      toast('Vídeo pronto!');
-    }
-  } catch (err) {
-    console.error(err); toast('Erro ao exportar: ' + (err.message || err), true);
-  } finally {
-    try { if (state.asrc) { state.asrc.disconnect(); state.asrc.connect(state.actx.destination); } } catch (_) {}
-    vid.pause(); vid.playbackRate = oldRate; vid.currentTime = 0;
-    setExporting(false); redraw();
+    vid.pause();if(rec.state!=='inactive')rec.stop();await stopped;
+    if(state.cancel){toast('Exportação cancelada.');return;}
+    const blob=new Blob(parts,{type:rec.mimeType||mime});
+    if(blob.size<4096)throw new Error('O arquivo de vídeo ficou vazio ou incompleto. Tente novamente.');
+    if(!blob.type.toLowerCase().includes('mp4'))throw new Error('O navegador retornou um formato diferente de MP4. Nenhum arquivo foi renomeado incorretamente.');
+    download('clipa-video-com-legendas.mp4',blob);toast(`MP4 exportado · ${W}×${H} · ${(blob.size/1024/1024).toFixed(1)} MB`);
+  }catch(err){console.error(err);toast('Erro ao exportar: '+(err.message||err),true);}
+  finally{
+    cancelAnimationFrame(raf);try{if(rec&&rec.state!=='inactive')rec.stop();}catch(_){}
+    if(stream)stream.getTracks().forEach(t=>t.stop());
+    try{if(sourceConnected&&state.asrc&&state.actx){state.asrc.disconnect();state.asrc.connect(state.actx.destination);}}catch(_){}
+    vid.pause();vid.playbackRate=originalRate;try{await seekTo(Math.min(originalTime,state.dur));}catch(_){}
+    state.lastPosition=vid.currentTime;setExporting(false);redraw();save();
+    if(wasPlaying&&!state.cancel)vid.play().catch(()=>{});
   }
 };
 
-addEventListener('beforeunload', e => { if (state.busy) { e.preventDefault(); e.returnValue = ''; } });
+addEventListener('beforeunload', e => { if (state.busy) { e.preventDefault(); e.returnValue = ''; } else { state.lastPosition=vid.currentTime||state.lastPosition; persistLocal(); } });
+addEventListener('pagehide',()=>{if(state.fileUrl)URL.revokeObjectURL(state.fileUrl);});
 </script>
 </body>
 </html>
