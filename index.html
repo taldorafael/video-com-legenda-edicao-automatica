@@ -144,7 +144,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
   .ln{grid-template-columns:70px 1fr auto}
 }
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
-</style>
+#seek{cursor:pointer;touch-action:pan-x;min-width:80px}#seek:focus-visible{outline:2px solid var(--acc);outline-offset:3px}</style>
 </head>
 <body>
 
@@ -458,7 +458,7 @@ function fitStage() {
   if (hw <= 0) return;
   const maxH = Math.max(220, innerHeight * (innerWidth < 900 ? .4 : .7));
   const ar = state.vw / state.vh;
-  const w = Math.min(hw, maxH * ar), h = w / ar, d = Math.min(devicePixelRatio || 1, 2);
+  const w = Math.min(hw, maxH * ar), h = w / ar, d = Math.min(devicePixelRatio || 1, 1.25);
   stage.style.width = w + 'px'; stage.style.height = h + 'px';
   cv.width = Math.round(w * d); cv.height = Math.round(h * d);
   redraw();
@@ -486,8 +486,64 @@ new ResizeObserver(fitStage).observe($('holder'));
 const togglePlay = () => { vid.paused ? vid.play().catch(() => {}) : vid.pause(); };
 $('play').onclick = togglePlay;
 stage.onclick = togglePlay;
-$('seek').addEventListener('input', e => { seeking = true; vid.currentTime = (e.target.value / 1000) * state.dur; $('time').textContent = fmt(vid.currentTime); });
-$('seek').addEventListener('change', () => { seeking = false; });
+// Scrubbing estável: durante o arraste não mandamos centenas de seeks ao decoder.
+// O vídeo pausa, o usuário escolhe a posição e fazemos UM seek ao soltar.
+let scrub = { active: false, resume: false, target: 0 };
+const seekBar = $('seek');
+
+function beginScrub() {
+  if (scrub.active) return;
+  scrub.active = true;
+  scrub.resume = !vid.paused;
+  if (scrub.resume) vid.pause();
+  seeking = true;
+}
+function updateScrub(value) {
+  const duration = Number.isFinite(state.dur) ? state.dur : (vid.duration || 0);
+  scrub.target = duration * (Number(value) / 1000);
+  $('time').textContent = fmt(scrub.target);
+}
+async function finishScrub() {
+  if (!scrub.active) return;
+  const target = scrub.target;
+  const resume = scrub.resume;
+  scrub.active = false;
+  try {
+    if (Number.isFinite(target) && state.dur > 0) {
+      vid.currentTime = Math.max(0, Math.min(state.dur, target));
+      await new Promise(resolve => {
+        if (Math.abs(vid.currentTime - target) < 0.04) return resolve();
+        const done = () => { vid.removeEventListener('seeked', done); resolve(); };
+        vid.addEventListener('seeked', done, { once: true });
+        setTimeout(() => { vid.removeEventListener('seeked', done); resolve(); }, 1200);
+      });
+    }
+  } catch (_) {}
+  seeking = false;
+  redraw();
+  if (resume) vid.play().catch(() => {});
+}
+seekBar.addEventListener('pointerdown', beginScrub);
+seekBar.addEventListener('input', e => {
+  if (!scrub.active) beginScrub();
+  updateScrub(e.target.value);
+});
+seekBar.addEventListener('pointerup', finishScrub);
+seekBar.addEventListener('pointercancel', finishScrub);
+seekBar.addEventListener('change', () => {
+  if (!scrub.active) {
+    beginScrub();
+    updateScrub(seekBar.value);
+  }
+  finishScrub();
+});
+seekBar.addEventListener('keydown', e => {
+  if (['ArrowLeft','ArrowRight','Home','End','PageUp','PageDown'].includes(e.key)) {
+    beginScrub();
+    setTimeout(() => updateScrub(seekBar.value), 0);
+  }
+});
+seekBar.addEventListener('blur', finishScrub);
 $('speed').onchange = e => { vid.playbackRate = +e.target.value; };
 $('eye').onclick = () => { S.show = !S.show; $('eye').classList.toggle('on', !S.show); redraw(); };
 $('safeBtn').onclick = () => $('safe').classList.toggle('on');
@@ -899,9 +955,13 @@ $('exportBtn').onclick = async () => {
     await waitMedia(exportVideo, 'loadedmetadata');
     await waitMedia(exportVideo, 'canplay');
 
-    const W = Math.max(2, exportVideo.videoWidth || state.vw);
-    const H = Math.max(2, exportVideo.videoHeight || state.vh);
-    const fps = 30;
+    const sourceW = Math.max(2, exportVideo.videoWidth || state.vw);
+    const sourceH = Math.max(2, exportVideo.videoHeight || state.vh);
+    // Exportação equilibrada: limita a 1080p para não congelar o editor em PCs comuns.
+    const scale = Math.min(1, 1920 / sourceW, 1080 / sourceH);
+    const W = Math.max(2, Math.round(sourceW * scale));
+    const H = Math.max(2, Math.round(sourceH * scale));
+    const fps = 24;
 
     // Resolução original, sem redução artificial para 1920 px.
     const canvas = document.createElement('canvas');
@@ -928,7 +988,7 @@ $('exportBtn').onclick = async () => {
 
     // Bitrate proporcional à resolução, com limite para evitar arquivos absurdos.
     const pixels = W * H;
-    const videoBitrate = Math.max(12000000, Math.min(60000000, Math.round(pixels * fps * 0.20)));
+    const videoBitrate = Math.max(6000000, Math.min(16000000, Math.round(pixels * fps * 0.075)));
     const recorder = new MediaRecorder(videoStream, {
       mimeType: mime,
       videoBitsPerSecond: videoBitrate,
@@ -999,7 +1059,7 @@ $('exportBtn').onclick = async () => {
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 60000);
-      toast('MP4 exportado com resolução original!');
+      toast(`MP4 exportado em ${W}×${H} a 24 fps.`);
     }
   } catch (error) {
     console.error(error);
